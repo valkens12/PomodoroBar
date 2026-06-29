@@ -2,10 +2,14 @@ import SwiftUI
 
 /// The content shown inside the menu bar item.
 ///
-/// When idle: a small tomato glyph alone. When running or paused:
-/// - if `hideMenuBarTime` is off: a tiny phase-tinted tomato + the countdown.
-/// - if `hideMenuBarTime` is on: a ripening tomato alone, green at the start
-///   of the session ripening to red as time elapses (no countdown text).
+/// Renders the tomato as a rasterized `NSImage` (`MenuBarIcon.tomato`) so it
+/// reliably appears in the status item — `MenuBarExtra` does not reliably
+/// render arbitrary SwiftUI shape/gradient views as the icon.
+///
+/// - Idle: a ripe red tomato.
+/// - Running/paused, `hideMenuBarTime` off: a phase-tinted tomato + countdown.
+/// - Running/paused, `hideMenuBarTime` on: a ripening tomato (green -> red as
+///   the session progresses), no countdown.
 struct TimerMenuBarLabel: View {
   let timer: PomodoroTimer
   let settings: AppSettings
@@ -22,15 +26,11 @@ struct TimerMenuBarLabel: View {
   var body: some View {
     if showsTime {
       if settings.hideMenuBarTime {
-        TomatoGlyph(
-          size: 14,
-          ripeness: ripeness,
-          menuBarOptimized: true
-        )
-        .accessibilityLabel(timer.accessibilityLabel)
+        Image(nsImage: MenuBarIcon.tomato(ripeness: ripeness))
+          .accessibilityLabel(timer.accessibilityLabel)
       } else {
         HStack(spacing: 4) {
-          TomatoGlyph(size: 12, phase: timer.phase, menuBarOptimized: true)
+          Image(nsImage: MenuBarIcon.tomato(phase: timer.phase, size: 12))
           Text(timer.formattedRemaining)
             .font(.system(size: 12, weight: .semibold, design: .rounded))
             .monospacedDigit()
@@ -38,7 +38,7 @@ struct TimerMenuBarLabel: View {
         .accessibilityLabel(timer.accessibilityLabel)
       }
     } else {
-      TomatoGlyph(size: 13, phase: nil, menuBarOptimized: true)
+      Image(nsImage: MenuBarIcon.tomato(phase: nil))
         .accessibilityLabel(timer.accessibilityLabel)
     }
   }
