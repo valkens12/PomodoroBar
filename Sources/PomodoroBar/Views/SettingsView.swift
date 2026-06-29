@@ -44,12 +44,31 @@ private struct GeneralTab: View {
     @Bindable var settings = settings
 
     Form {
+      menuBarSection(settings: settings)
       durationsSection(settings: settings)
       cycleSection(settings: settings)
       automationSection(settings: settings)
       soundSection(settings: settings)
     }
     .formStyle(.grouped)
+  }
+
+  @ViewBuilder
+  private func menuBarSection(settings: AppSettings) -> some View {
+    @Bindable var settings = settings
+    Section {
+      Toggle(isOn: $settings.hideMenuBarTime) {
+        Label("Hide time, show ripening tomato", systemImage: "leaf.fill")
+          .foregroundStyle(Theme.leafGreen)
+      }
+    } header: {
+      Text("Menu Bar")
+    } footer: {
+      Text(
+        "When on, the menu bar shows a tomato that ripens from green to red "
+        + "as the session progresses, instead of the countdown."
+      )
+    }
   }
 
   // MARK: - Sections

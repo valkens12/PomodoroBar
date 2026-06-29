@@ -29,50 +29,34 @@ final class AppSettings {
     static let autoStartFocus = "autoStartFocus"
     static let soundEnabled = "soundEnabled"
     static let tickEnabled = "tickEnabled"
+    static let hideMenuBarTime = "hideMenuBarTime"
   }
 
   // MARK: - Stored Properties
 
   var focusMinutes: Int {
     didSet {
-      focusMinutes = clamp(
-        focusMinutes,
-        lower: Limits.focusMinutesLower,
-        upper: Limits.focusMinutesUpper,
-      )
+      // Bounds are enforced by the Stepper range in the UI and clamped on load
+      // in init. Reassigning here would re-trigger didSet -> infinite recursion
+      // -> stack overflow (EXC_BAD_ACCESS), so only persist.
       UserDefaults.standard.set(focusMinutes, forKey: Key.focusMinutes)
     }
   }
 
   var shortBreakMinutes: Int {
     didSet {
-      shortBreakMinutes = clamp(
-        shortBreakMinutes,
-        lower: Limits.shortBreakLower,
-        upper: Limits.shortBreakUpper,
-      )
       UserDefaults.standard.set(shortBreakMinutes, forKey: Key.shortBreakMinutes)
     }
   }
 
   var longBreakMinutes: Int {
     didSet {
-      longBreakMinutes = clamp(
-        longBreakMinutes,
-        lower: Limits.longBreakLower,
-        upper: Limits.longBreakUpper,
-      )
       UserDefaults.standard.set(longBreakMinutes, forKey: Key.longBreakMinutes)
     }
   }
 
   var sessionsBeforeLongBreak: Int {
     didSet {
-      sessionsBeforeLongBreak = clamp(
-        sessionsBeforeLongBreak,
-        lower: Limits.sessionsLower,
-        upper: Limits.sessionsUpper,
-      )
       UserDefaults.standard.set(
         sessionsBeforeLongBreak, forKey: Key.sessionsBeforeLongBreak,
       )
@@ -100,6 +84,14 @@ final class AppSettings {
   var tickEnabled: Bool {
     didSet {
       UserDefaults.standard.set(tickEnabled, forKey: Key.tickEnabled)
+    }
+  }
+
+  /// When true, the menu bar hides the countdown and shows a ripening tomato
+  /// (green -> red as the session progresses) instead.
+  var hideMenuBarTime: Bool {
+    didSet {
+      UserDefaults.standard.set(hideMenuBarTime, forKey: Key.hideMenuBarTime)
     }
   }
 
@@ -149,6 +141,11 @@ final class AppSettings {
     } else {
       self.tickEnabled = false
     }
+    if defaults.object(forKey: Key.hideMenuBarTime) != nil {
+      self.hideMenuBarTime = defaults.bool(forKey: Key.hideMenuBarTime)
+    } else {
+      self.hideMenuBarTime = false
+    }
 
     // Mirror back to defaults so persisted values are always consistent with
     // the (possibly clamped) in-memory defaults set above.
@@ -160,6 +157,7 @@ final class AppSettings {
     defaults.set(autoStartFocus, forKey: Key.autoStartFocus)
     defaults.set(soundEnabled, forKey: Key.soundEnabled)
     defaults.set(tickEnabled, forKey: Key.tickEnabled)
+    defaults.set(hideMenuBarTime, forKey: Key.hideMenuBarTime)
   }
 
   // MARK: - Phase Duration

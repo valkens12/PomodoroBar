@@ -26,7 +26,7 @@ struct PomodoroBarApp: App {
         .environment(focusGuard)
         .environment(statistics)
     } label: {
-      TimerMenuBarLabel(timer: timer)
+      TimerMenuBarLabel(timer: timer, settings: settings)
     }
     .menuBarExtraStyle(.window)
 

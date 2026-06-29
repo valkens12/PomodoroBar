@@ -102,6 +102,45 @@ enum Theme {
       )
     }
   }
+
+  /// Tomato-body stops for a "ripening" tomato: unripe green at 0, passing
+  /// through orange around 0.5, to ripe red at 1. Used by the menu bar icon
+  /// when the user hides the countdown — the tomato ripens as the session
+  /// progresses.
+  static func ripeStops(for ripeness: Double) -> (bright: Color, deep: Color) {
+    let r = min(1, max(0, ripeness))
+    // (r, g, b) channels for unripe -> mid -> ripe, bright and deep variants.
+    let gB = (0.62, 0.88, 0.45)
+    let gD = (0.30, 0.55, 0.18)
+    let oB = (1.00, 0.70, 0.25)
+    let oD = (0.90, 0.45, 0.12)
+    let rB = (1.00, 0.55, 0.28)
+    let rD = (0.62, 0.10, 0.08)
+
+    let bright: (Double, Double, Double)
+    let deep: (Double, Double, Double)
+    if r < 0.5 {
+      let t = r / 0.5
+      bright = Self.lerpRGB(gB, oB, t)
+      deep = Self.lerpRGB(gD, oD, t)
+    } else {
+      let t = (r - 0.5) / 0.5
+      bright = Self.lerpRGB(oB, rB, t)
+      deep = Self.lerpRGB(oD, rD, t)
+    }
+    return (
+      bright: Color(red: bright.0, green: bright.1, blue: bright.2),
+      deep: Color(red: deep.0, green: deep.1, blue: deep.2)
+    )
+  }
+
+  private static func lerpRGB(
+    _ a: (Double, Double, Double),
+    _ b: (Double, Double, Double),
+    _ t: Double
+  ) -> (Double, Double, Double) {
+    (a.0 + (b.0 - a.0) * t, a.1 + (b.1 - a.1) * t, a.2 + (b.2 - a.2) * t)
+  }
 }
 
 // MARK: - TomatoShape
@@ -232,29 +271,54 @@ struct TomatoCalyx: Shape {
 
 // MARK: - TomatoGlyph
 
-/// A composite tomato glyph: a radially-lit tomato body tinted by `phase`,
-/// the green calyx on top, and a soft specular highlight on the upper-left.
-/// Renders crisply from ~13pt (menu bar) up to ~84pt (popover center).
+/// A composite tomato glyph: a lit tomato body (radially-shaded by default,
+/// or a flat bright gradient for the menu bar), the green calyx on top, and a
+/// soft specular highlight on the upper-left. Renders crisply from ~13pt
+/// (menu bar) up to ~84pt (popover center).
+///
+/// - `phase`: tint the body for a given Pomodoro phase (default ripe red).
+/// - `ripeness`: when set (0...1), overrides `phase` with a green->red ripening
+///   gradient — used by the menu bar icon when the countdown is hidden.
+/// - `menuBarOptimized`: uses a brighter, higher-contrast body plus a thin dark
+///   outline so the tomato reads on both light and dark menu bars.
 struct TomatoGlyph: View {
 
   var size: CGFloat
   var phase: PomodoroTimer.Phase? = nil
+  var ripeness: Double? = nil
+  var menuBarOptimized: Bool = false
 
   var body: some View {
-    let stops = Theme.bodyStops(for: phase)
+    let stops: (bright: Color, deep: Color) = {
+      if let ripeness {
+        return Theme.ripeStops(for: ripeness)
+      }
+      return Theme.bodyStops(for: phase)
+    }()
     let calyxSize = size * 0.30
     let calyxLeafCount = size < 16 ? 3 : 5
 
     return ZStack {
-      // Tomato body — radial gradient: sun-lit upper-left -> shaded edge.
+      // Tomato body. Menu bar uses a flat bright gradient (higher contrast on
+      // dark bars); the popover uses a soft radial shade for depth.
       TomatoShape()
         .fill(
-          .radialGradient(
-            Gradient(colors: [stops.bright, stops.deep]),
-            center: UnitPoint(x: 0.32, y: 0.28),
-            startRadius: 0.0,
-            endRadius: size * 0.72,
-          )
+          menuBarOptimized
+            ? AnyShapeStyle(
+              .linearGradient(
+                Gradient(colors: [stops.bright, stops.deep]),
+                startPoint: .top,
+                endPoint: .bottom
+              )
+            )
+            : AnyShapeStyle(
+              .radialGradient(
+                Gradient(colors: [stops.bright, stops.deep]),
+                center: UnitPoint(x: 0.32, y: 0.28),
+                startRadius: 0.0,
+                endRadius: size * 0.72
+              )
+            )
         )
 
       // Calyx — green sepals sitting on top of the tomato, slightly raised.
@@ -271,6 +335,13 @@ struct TomatoGlyph: View {
         .blur(radius: size * 0.06)
         .offset(x: -size * 0.18, y: -size * 0.20)
         .accessibilityHidden(true)
+
+      // Menu bar only: thin dark outline so the tomato is defined on light
+      // bars (the bright body already carries it on dark bars).
+      if menuBarOptimized {
+        TomatoShape()
+          .stroke(Color.black.opacity(0.35), lineWidth: max(0.6, size * 0.05))
+      }
     }
     .frame(width: size, height: size)
     .accessibilityHidden(true)

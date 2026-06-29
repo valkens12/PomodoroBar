@@ -42,6 +42,10 @@ struct MenuContentView: View {
     .frame(width: popoverWidth)
     .background(Theme.popoverGradient())
     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    // The popover paints a warm cream background, so pin to a light appearance
+    // — otherwise the .window popover inherits dark mode and `.primary`/`
+    // .secondary` text renders white-on-cream (invisible).
+    .environment(\.colorScheme, .light)
   }
 
   // MARK: - Sections
