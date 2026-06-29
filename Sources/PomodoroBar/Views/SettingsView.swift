@@ -168,6 +168,9 @@ private struct GeneralTab: View {
   // MARK: - Helpers
 
   /// A labeled row that shows the current value and lets the user step it.
+  /// The value is rendered as its own Text (NOT as the Stepper's label, which
+  /// `.labelsHidden()` would conceal — that made the number invisible and the
+  /// arrows appear to do nothing).
   @ViewBuilder
   private func stepperRow(
     label: some View,
@@ -179,10 +182,11 @@ private struct GeneralTab: View {
     HStack {
       label
       Spacer()
+      Text("\(value) \(unit)")
+        .font(.system(.body, design: .rounded).monospacedDigit())
+        .foregroundStyle(.primary)
       Stepper(value: binding, in: range) {
-        Text("\(value) \(unit)")
-          .font(.system(.body, design: .rounded).monospacedDigit())
-          .foregroundStyle(.secondary)
+        EmptyView()
       }
       .labelsHidden()
     }
