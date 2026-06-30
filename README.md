@@ -53,9 +53,18 @@ The script:
 1. Runs `swift build -c release`.
 2. Creates `build/PomodoroBar.app/Contents/{MacOS,Resources}`.
 3. Copies the release executable into `Contents/MacOS/`.
-4. Copies `Resources/Info.plist` into `Contents/`.
+4. Copies `Resources/Info.plist` and `Resources/AppIcon.icns` into the bundle.
 5. Marks the executable as runnable (`chmod 755`).
-6. Prints the final bundle path.
+6. Ad-hoc code-signs the bundle (`codesign --options runtime`) so it launches
+   cleanly on Apple Silicon and Gatekeeper doesn't flag it as damaged on this
+   Mac. This is **not** notarization — distributing the `.app` to another
+   machine still requires a paid Apple Developer ID and `notarytool`. To sign
+   with a real identity instead of ad-hoc, set `CODESIGN_IDENTITY` before
+   running the script.
+7. Prints the final bundle path.
+
+To regenerate the app icon after a design change, run `./Scripts/generate-icon.sh`
+(renders the tomato to PNG and compiles `Resources/AppIcon.icns` via `iconutil`).
 
 ## Controls
 
