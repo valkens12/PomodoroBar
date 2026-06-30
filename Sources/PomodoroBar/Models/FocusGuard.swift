@@ -40,6 +40,7 @@ final class FocusGuard {
   }
 
   private(set) var frontmostBundleId: String?
+  private(set) var frontmostAppName: String?
 
   @ObservationIgnored
   private var observerTokens: [NSObjectProtocol] = []
@@ -129,7 +130,9 @@ final class FocusGuard {
   }
 
   func refreshFrontmost() {
-    frontmostBundleId = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+    let app = NSWorkspace.shared.frontmostApplication
+    frontmostBundleId = app?.bundleIdentifier
+    frontmostAppName = app?.localizedName
   }
 
   // MARK: - Persistence

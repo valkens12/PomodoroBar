@@ -65,6 +65,11 @@ final class PomodoroTimer {
   var remainingSeconds: Int
   var completedFocusSessions: Int
 
+  /// Bumped every time a focus session completes. Views observe this via
+  /// `.onChange` to trigger a one-shot completion animation; the value
+  /// itself carries no meaning beyond "something changed."
+  private(set) var focusCompletionTick: Int = 0
+
   @ObservationIgnored private var cancellable: AnyCancellable?
 
   // MARK: - Init
@@ -209,6 +214,7 @@ final class PomodoroTimer {
     if leavingPhase == .focus {
       statistics.recordFocusCompletion(minutes: settings.focusMinutes)
       completedFocusSessions += 1
+      focusCompletionTick += 1
     }
 
     // Determine the next phase.
