@@ -44,22 +44,8 @@ struct FocusAppsTab: View {
           }
         } else {
           ForEach(focusGuard.focusApps) { app in
-            HStack {
-              appIcon(for: app)
-                .accessibilityHidden(true)
-              Text(app.name)
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .font(.system(.body, design: .rounded))
-              Spacer()
-              Button(role: .destructive) {
-                focusGuard.remove(app)
-              } label: {
-                Image(systemName: "minus.circle.fill")
-                  .foregroundStyle(.red)
-              }
-              .buttonStyle(.borderless)
-              .accessibilityLabel("Remove \(app.name)")
+            FocusAppRow(app: app, icon: { appIcon(for: app) }) {
+              focusGuard.remove(app)
             }
           }
         }
@@ -120,6 +106,47 @@ struct FocusAppsTab: View {
     case .failure(let error):
       // Non-fatal: the user cancelled or the URL was unreadable.
       print("FocusAppsTab: file importer failed: \(error.localizedDescription)")
+    }
+  }
+}
+
+// MARK: - FocusAppRow
+
+/// A single focus-app row. The destructive remove button only appears on
+/// hover, matching system list patterns (Mail, Reminders) instead of
+/// permanently showing a red icon next to every row.
+private struct FocusAppRow<Icon: View>: View {
+  let app: FocusApp
+  @ViewBuilder let icon: () -> Icon
+  let onRemove: () -> Void
+
+  @State private var isHovering = false
+
+  var body: some View {
+    HStack {
+      icon()
+        .accessibilityHidden(true)
+      Text(app.name)
+        .lineLimit(1)
+        .truncationMode(.middle)
+        .font(.system(.body, design: .rounded))
+      Spacer()
+      // Opacity (not `.hidden()` or a conditional) so the button stays in the
+      // accessibility tree and reachable via VoiceOver/keyboard, which never
+      // "hover" — only its visibility for sighted pointer users is gated.
+      Button(role: .destructive, action: onRemove) {
+        Image(systemName: "minus.circle.fill")
+          .foregroundStyle(.red)
+      }
+      .buttonStyle(.borderless)
+      .opacity(isHovering ? 1 : 0)
+      .accessibilityLabel("Remove \(app.name)")
+    }
+    .contentShape(Rectangle())
+    .onHover { hovering in
+      withAnimation(.easeOut(duration: 0.12)) {
+        isHovering = hovering
+      }
     }
   }
 }
