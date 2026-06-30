@@ -36,5 +36,8 @@ struct PomodoroBarApp: App {
         .environment(focusGuard)
         .environment(statistics)
     }
+    // Respect SettingsView's own min/max frame instead of letting the window
+    // be dragged past its content into empty space.
+    .windowResizability(.contentSize)
   }
 }

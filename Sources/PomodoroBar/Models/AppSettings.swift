@@ -9,15 +9,14 @@ import SwiftUI
 final class AppSettings {
   // MARK: - Constants
 
-  private enum Limits {
-    static let focusMinutesLower = 1
-    static let focusMinutesUpper = 120
-    static let shortBreakLower = 1
-    static let shortBreakUpper = 60
-    static let longBreakLower = 1
-    static let longBreakUpper = 60
-    static let sessionsLower = 2
-    static let sessionsUpper = 12
+  /// Valid ranges for each duration/cycle setting. This is the single source
+  /// of truth for both the on-load clamp below and the Settings UI steppers
+  /// (`SettingsView`) — keeping one copy means the two can't drift apart.
+  enum Bounds {
+    static let focusMinutes = 1...120
+    static let shortBreakMinutes = 1...60
+    static let longBreakMinutes = 1...60
+    static let sessionsBeforeLongBreak = 2...12
   }
 
   private enum Key {
@@ -102,23 +101,19 @@ final class AppSettings {
 
     self.focusMinutes = Self.clamp(
       defaults.object(forKey: Key.focusMinutes) as? Int ?? 25,
-      lower: Limits.focusMinutesLower,
-      upper: Limits.focusMinutesUpper,
+      to: Bounds.focusMinutes,
     )
     self.shortBreakMinutes = Self.clamp(
       defaults.object(forKey: Key.shortBreakMinutes) as? Int ?? 5,
-      lower: Limits.shortBreakLower,
-      upper: Limits.shortBreakUpper,
+      to: Bounds.shortBreakMinutes,
     )
     self.longBreakMinutes = Self.clamp(
       defaults.object(forKey: Key.longBreakMinutes) as? Int ?? 15,
-      lower: Limits.longBreakLower,
-      upper: Limits.longBreakUpper,
+      to: Bounds.longBreakMinutes,
     )
     self.sessionsBeforeLongBreak = Self.clamp(
       defaults.object(forKey: Key.sessionsBeforeLongBreak) as? Int ?? 4,
-      lower: Limits.sessionsLower,
-      upper: Limits.sessionsUpper,
+      to: Bounds.sessionsBeforeLongBreak,
     )
 
     if defaults.object(forKey: Key.autoStartBreaks) != nil {
@@ -176,11 +171,7 @@ final class AppSettings {
 
   // MARK: - Helpers
 
-  private static func clamp(_ value: Int, lower: Int, upper: Int) -> Int {
-    min(max(value, lower), upper)
-  }
-
-  private func clamp(_ value: Int, lower: Int, upper: Int) -> Int {
-    Self.clamp(value, lower: lower, upper: upper)
+  private static func clamp(_ value: Int, to range: ClosedRange<Int>) -> Int {
+    min(max(value, range.lowerBound), range.upperBound)
   }
 }
