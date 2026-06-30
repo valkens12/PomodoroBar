@@ -7,6 +7,11 @@ import SwiftUI
 struct StatisticsTab: View {
   @Environment(StatisticsStore.self) private var statistics
 
+  /// Hovered/tapped day on each chart, used to drive a crosshair + value
+  /// callout. Separate per chart since both are visible at once.
+  @State private var selectedSevenDayDate: Date?
+  @State private var selectedThirtyDayDate: Date?
+
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 20) {
@@ -71,7 +76,9 @@ struct StatisticsTab: View {
   // MARK: - 7-Day Bar Chart
 
   private var sevenDayChart: some View {
-    VStack(alignment: .leading, spacing: 8) {
+    let selected = nearestDailyTotal(to: selectedSevenDayDate, in: statistics.lastSevenDays)
+
+    return VStack(alignment: .leading, spacing: 8) {
       Text("Last 7 Days")
         .font(.system(.headline, design: .rounded))
         .foregroundStyle(Theme.tomatoRed)
@@ -89,7 +96,18 @@ struct StatisticsTab: View {
           )
         )
         .cornerRadius(4)
+        .opacity(selected == nil || selected?.id == day.id ? 1 : 0.35)
+
+        if let selected {
+          RuleMark(x: .value("Day", selected.date, unit: .day))
+            .foregroundStyle(Theme.vineGreen.opacity(0.5))
+            .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+            .annotation(position: .top, spacing: 4) {
+              chartCallout(for: selected)
+            }
+        }
       }
+      .chartXSelection(value: $selectedSevenDayDate)
       .chartXAxis {
         AxisMarks(values: .stride(by: .day)) { value in
           AxisGridLine()
@@ -109,7 +127,9 @@ struct StatisticsTab: View {
   // MARK: - 30-Day Area Trend
 
   private var thirtyDayChart: some View {
-    VStack(alignment: .leading, spacing: 8) {
+    let selected = nearestDailyTotal(to: selectedThirtyDayDate, in: statistics.lastThirtyDays)
+
+    return VStack(alignment: .leading, spacing: 8) {
       Text("Last 30 Days")
         .font(.system(.headline, design: .rounded))
         .foregroundStyle(Theme.vineGreen)
@@ -135,7 +155,24 @@ struct StatisticsTab: View {
           )
         )
         .interpolationMethod(.catmullRom)
+
+        if let selected {
+          RuleMark(x: .value("Day", selected.date, unit: .day))
+            .foregroundStyle(Theme.vineGreen.opacity(0.5))
+            .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+            .annotation(position: .top, spacing: 4) {
+              chartCallout(for: selected)
+            }
+
+          PointMark(
+            x: .value("Day", selected.date, unit: .day),
+            y: .value("Minutes", selected.minutes),
+          )
+          .foregroundStyle(Theme.tomatoRed)
+          .symbolSize(60)
+        }
       }
+      .chartXSelection(value: $selectedThirtyDayDate)
       .chartXAxis {
         AxisMarks(values: .stride(by: .day, count: 5)) { value in
           AxisGridLine()
@@ -150,6 +187,29 @@ struct StatisticsTab: View {
       }
       .frame(height: 120)
     }
+  }
+
+  /// Shared crosshair callout: the day's date and exact focus minutes.
+  @ViewBuilder
+  private func chartCallout(for day: DailyTotal) -> some View {
+    VStack(spacing: 2) {
+      Text(day.date, format: .dateTime.month(.abbreviated).day())
+        .font(.system(.caption2, design: .rounded))
+        .foregroundStyle(.secondary)
+      Text("\(day.minutes)m")
+        .font(.system(.caption, design: .rounded).weight(.bold))
+        .foregroundStyle(Theme.tomatoRed)
+    }
+    .padding(.horizontal, 6)
+    .padding(.vertical, 4)
+    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6))
+  }
+
+  /// Finds the bucket matching `date`'s calendar day, if any.
+  private func nearestDailyTotal(to date: Date?, in totals: [DailyTotal]) -> DailyTotal? {
+    guard let date else { return nil }
+    let day = Calendar.current.startOfDay(for: date)
+    return totals.first { $0.date == day }
   }
 
   // MARK: - Clear History
