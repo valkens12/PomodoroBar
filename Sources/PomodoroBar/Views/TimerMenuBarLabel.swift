@@ -36,10 +36,18 @@ struct TimerMenuBarLabel: View {
     Group {
       if showsTime {
         if settings.hideMenuBarTime {
-          Image(nsImage: MenuBarIcon.tomato(ripeness: ripeness))
+          HStack(spacing: 3) {
+            Image(nsImage: MenuBarIcon.tomato(ripeness: ripeness))
+            if isDimmed {
+              pauseGlyph
+            }
+          }
         } else {
           HStack(spacing: 4) {
             Image(nsImage: MenuBarIcon.tomato(phase: timer.phase, size: 12))
+            if isDimmed {
+              pauseGlyph
+            }
             Text(timer.formattedRemaining)
               .font(Typography.menuBarCountdown)
               .monospacedDigit()
@@ -51,6 +59,13 @@ struct TimerMenuBarLabel: View {
     }
     .opacity(isDimmed ? 0.45 : 1.0)
     .accessibilityLabel(timer.accessibilityLabel)
+  }
+
+  /// Explicit pause indicator alongside the dimming, so a suspended countdown
+  /// doesn't rely on the opacity difference alone to be noticed.
+  private var pauseGlyph: some View {
+    Image(systemName: "pause.fill")
+      .font(.system(size: 8, weight: .bold))
   }
 }
 
