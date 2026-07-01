@@ -59,8 +59,10 @@ enum Theme {
     }
   }
 
-  /// The primary accent color for the given phase, used for labels, buttons,
-  /// and the status bar indicator dot.
+  /// The primary accent color for the given phase, used for fills, buttons,
+  /// gradients, and the status bar indicator dot. For *text* use
+  /// `textColor(for:)` — these fill accents (leafGreen especially) fall short
+  /// of the 4.5:1 contrast minimum against a light window background.
   static func color(for phase: PomodoroTimer.Phase) -> Color {
     switch phase {
     case .focus:
@@ -70,6 +72,39 @@ enum Theme {
     case .longBreak:
       return vineGreen
     }
+  }
+
+  /// Phase accent tuned for use as text: darkened in light mode and
+  /// brightened in dark mode so labels reach at least 4.5:1 against the
+  /// window background in both appearances.
+  static func textColor(for phase: PomodoroTimer.Phase) -> Color {
+    switch phase {
+    case .focus:
+      return dynamic(
+        light: NSColor(red: 0.78, green: 0.16, blue: 0.13, alpha: 1),
+        dark: NSColor(red: 1.00, green: 0.55, blue: 0.48, alpha: 1),
+      )
+    case .shortBreak:
+      return dynamic(
+        light: NSColor(red: 0.27, green: 0.52, blue: 0.16, alpha: 1),
+        dark: NSColor(red: 0.62, green: 0.85, blue: 0.45, alpha: 1),
+      )
+    case .longBreak:
+      return dynamic(
+        light: NSColor(red: 0.24, green: 0.46, blue: 0.17, alpha: 1),
+        dark: NSColor(red: 0.55, green: 0.80, blue: 0.45, alpha: 1),
+      )
+    }
+  }
+
+  /// A `Color` that resolves per-appearance, following the same pattern as
+  /// `cardBackground`.
+  private static func dynamic(light: NSColor, dark: NSColor) -> Color {
+    Color(
+      nsColor: NSColor(name: nil) { appearance in
+        appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? dark : light
+      }
+    )
   }
 
   // MARK: - Surfaces
