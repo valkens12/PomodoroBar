@@ -50,14 +50,7 @@ struct FocusAppsTab: View {
           }
         }
 
-        Button {
-          showPicker = true
-        } label: {
-          Label("Add App…", systemImage: "plus.circle.fill")
-            .foregroundStyle(Theme.tomatoRed)
-        }
-        .buttonStyle(.borderless)
-        .accessibilityHint("Choose an application to add to the focus list.")
+        addAppMenu
       } header: {
         Text("Focus Apps")
       } footer: {
@@ -68,10 +61,58 @@ struct FocusAppsTab: View {
     .fileImporter(
       isPresented: $showPicker,
       allowedContentTypes: [UTType.application],
-      allowsMultipleSelection: false,
+      allowsMultipleSelection: true,
     ) { result in
       handlePick(result)
     }
+  }
+
+  // MARK: - Add Menu
+
+  /// Adding an app offers the currently running apps first — one click,
+  /// no trip through the open panel — with "Choose from Finder…" as the
+  /// fallback for apps that aren't running.
+  private var addAppMenu: some View {
+    Menu {
+      let candidates = runningAppCandidates
+      if !candidates.isEmpty {
+        ForEach(candidates, id: \.processIdentifier) { app in
+          Button(app.localizedName ?? app.bundleIdentifier ?? "Unknown") {
+            if let url = app.bundleURL {
+              focusGuard.add(url: url)
+            }
+          }
+        }
+        Divider()
+      }
+      Button("Choose from Finder…") {
+        showPicker = true
+      }
+    } label: {
+      Label("Add App…", systemImage: "plus.circle.fill")
+        .foregroundStyle(Theme.tomatoRed)
+    }
+    .menuStyle(.button)
+    .buttonStyle(.borderless)
+    .fixedSize()
+    .accessibilityHint("Choose an application to add to the focus list.")
+  }
+
+  /// Running apps with a regular activation policy that aren't already in the
+  /// list, sorted by name. Recomputed each time the menu opens.
+  private var runningAppCandidates: [NSRunningApplication] {
+    let existing = Set(focusGuard.focusApps.map(\.bundleId))
+    return NSWorkspace.shared.runningApplications
+      .filter { $0.activationPolicy == .regular }
+      .filter { app in
+        guard let bundleId = app.bundleIdentifier else { return false }
+        return !existing.contains(bundleId)
+          && bundleId != Bundle.main.bundleIdentifier
+      }
+      .sorted {
+        ($0.localizedName ?? "").localizedCaseInsensitiveCompare($1.localizedName ?? "")
+          == .orderedAscending
+      }
   }
 
   // MARK: - Helpers
@@ -96,13 +137,14 @@ struct FocusAppsTab: View {
     }
   }
 
-  /// Processes the file-importer result: on success, registers the picked .app
-  /// with the FocusGuard; on failure, logs and ignores.
+  /// Processes the file-importer result: on success, registers every picked
+  /// .app with the FocusGuard; on failure, logs and ignores.
   private func handlePick(_ result: Result<[URL], Error>) {
     switch result {
     case .success(let urls):
-      guard let url = urls.first else { return }
-      focusGuard.add(url: url)
+      for url in urls {
+        focusGuard.add(url: url)
+      }
     case .failure(let error):
       // Non-fatal: the user cancelled or the URL was unreadable.
       print("FocusAppsTab: file importer failed: \(error.localizedDescription)")
@@ -140,6 +182,7 @@ private struct FocusAppRow<Icon: View>: View {
       }
       .buttonStyle(.borderless)
       .opacity(isHovering ? 1 : 0)
+      .help("Remove \(app.name) from the focus list")
       .accessibilityLabel("Remove \(app.name)")
     }
     .contentShape(Rectangle())
