@@ -12,6 +12,9 @@ struct StatisticsTab: View {
   @State private var selectedSevenDayDate: Date?
   @State private var selectedThirtyDayDate: Date?
 
+  /// Gates the destructive Clear History action behind a confirmation.
+  @State private var showClearConfirmation = false
+
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 20) {
@@ -37,7 +40,7 @@ struct StatisticsTab: View {
         .accessibilityHidden(true)
       Text("No focus sessions yet")
         .font(.system(.title3, design: .rounded).weight(.semibold))
-        .foregroundStyle(Theme.tomatoRed)
+        .foregroundStyle(Theme.textColor(for: .focus))
       Text("Start the tomato and finish a focus session to see your stats grow here.")
         .font(.system(.body, design: .rounded))
         .foregroundStyle(.secondary)
@@ -56,19 +59,16 @@ struct StatisticsTab: View {
         title: "Today",
         minutes: statistics.todayMinutes,
         sessions: statistics.todaySessions,
-        phase: .focus,
       )
       StatCard(
         title: "This Week",
         minutes: statistics.weekMinutes,
         sessions: statistics.weekSessions,
-        phase: .shortBreak,
       )
       StatCard(
         title: "This Month",
         minutes: statistics.monthMinutes,
         sessions: statistics.monthSessions,
-        phase: .longBreak,
       )
     }
   }
@@ -81,7 +81,7 @@ struct StatisticsTab: View {
     return VStack(alignment: .leading, spacing: 8) {
       Text("Last 7 Days")
         .font(.system(.headline, design: .rounded))
-        .foregroundStyle(Theme.tomatoRed)
+        .foregroundStyle(Theme.textColor(for: .focus))
 
       Chart(statistics.lastSevenDays) { day in
         BarMark(
@@ -115,9 +115,13 @@ struct StatisticsTab: View {
         }
       }
       .chartYAxis {
-        AxisMarks(position: .leading) { _ in
+        AxisMarks(position: .leading) { value in
           AxisGridLine()
-          AxisValueLabel("m")
+          AxisValueLabel {
+            if let minutes = value.as(Int.self) {
+              Text("\(minutes)m")
+            }
+          }
         }
       }
       .frame(height: 160)
@@ -132,7 +136,7 @@ struct StatisticsTab: View {
     return VStack(alignment: .leading, spacing: 8) {
       Text("Last 30 Days")
         .font(.system(.headline, design: .rounded))
-        .foregroundStyle(Theme.vineGreen)
+        .foregroundStyle(Theme.textColor(for: .longBreak))
 
       Chart(statistics.lastThirtyDays) { day in
         LineMark(
@@ -180,9 +184,13 @@ struct StatisticsTab: View {
         }
       }
       .chartYAxis {
-        AxisMarks(position: .leading) { _ in
+        AxisMarks(position: .leading) { value in
           AxisGridLine()
-          AxisValueLabel("m")
+          AxisValueLabel {
+            if let minutes = value.as(Int.self) {
+              Text("\(minutes)m")
+            }
+          }
         }
       }
       .frame(height: 120)
@@ -198,7 +206,7 @@ struct StatisticsTab: View {
         .foregroundStyle(.secondary)
       Text("\(day.minutes)m")
         .font(.system(.caption, design: .rounded).weight(.bold))
-        .foregroundStyle(Theme.tomatoRed)
+        .foregroundStyle(Theme.textColor(for: .focus))
     }
     .padding(.horizontal, 6)
     .padding(.vertical, 4)
@@ -217,11 +225,26 @@ struct StatisticsTab: View {
   private var clearButton: some View {
     HStack {
       Spacer()
-      Button("Clear History", role: .destructive) {
-        statistics.clearAll()
+      Button("Clear History…", role: .destructive) {
+        showClearConfirmation = true
       }
       .buttonStyle(.bordered)
       .accessibilityHint("Delete all recorded focus sessions.")
+      .confirmationDialog(
+        "Clear all focus history?",
+        isPresented: $showClearConfirmation,
+      ) {
+        Button("Clear All History", role: .destructive) {
+          statistics.clearAll()
+        }
+        Button("Cancel", role: .cancel) {}
+      } message: {
+        Text(
+          "This permanently deletes all \(statistics.records.count) recorded "
+          + (statistics.records.count == 1 ? "session" : "sessions")
+          + ". This can't be undone."
+        )
+      }
     }
   }
 }
@@ -229,17 +252,17 @@ struct StatisticsTab: View {
 // MARK: - StatCard
 
 /// A compact summary card: a tomato glyph accent, a big rounded focus-minutes
-/// number, and a session-count subtitle.
+/// number, and a session-count subtitle. All cards share the focus red — every
+/// card shows focus minutes, and green means "break" elsewhere in the app.
 private struct StatCard: View {
   let title: String
   let minutes: Int
   let sessions: Int
-  let phase: PomodoroTimer.Phase
 
   var body: some View {
     VStack(alignment: .leading, spacing: 10) {
       HStack(spacing: 8) {
-        TomatoGlyph(size: 20, phase: phase)
+        TomatoGlyph(size: 20, phase: .focus)
           .accessibilityHidden(true)
         Text(title)
           .font(.system(.subheadline, design: .rounded).weight(.medium))
@@ -248,7 +271,7 @@ private struct StatCard: View {
 
       Text("\(minutes)")
         .font(.system(.largeTitle, design: .rounded).weight(.bold))
-        .foregroundStyle(Theme.color(for: phase))
+        .foregroundStyle(Theme.textColor(for: .focus))
         .monospacedDigit()
         .accessibilityLabel("\(minutes) focus minutes")
 
