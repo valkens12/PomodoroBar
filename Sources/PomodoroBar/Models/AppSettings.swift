@@ -29,6 +29,7 @@ final class AppSettings {
     static let soundEnabled = "soundEnabled"
     static let tickEnabled = "tickEnabled"
     static let hideMenuBarTime = "hideMenuBarTime"
+    static let notificationsEnabled = "notificationsEnabled"
   }
 
   // MARK: - Stored Properties
@@ -94,6 +95,15 @@ final class AppSettings {
     }
   }
 
+  /// When true, a system notification is posted when a phase completes
+  /// naturally (not on manual skip), so the transition is visible even while
+  /// another app is full-screen.
+  var notificationsEnabled: Bool {
+    didSet {
+      UserDefaults.standard.set(notificationsEnabled, forKey: Key.notificationsEnabled)
+    }
+  }
+
   // MARK: - Init
 
   init() {
@@ -141,6 +151,11 @@ final class AppSettings {
     } else {
       self.hideMenuBarTime = false
     }
+    if defaults.object(forKey: Key.notificationsEnabled) != nil {
+      self.notificationsEnabled = defaults.bool(forKey: Key.notificationsEnabled)
+    } else {
+      self.notificationsEnabled = true
+    }
 
     // Mirror back to defaults so persisted values are always consistent with
     // the (possibly clamped) in-memory defaults set above.
@@ -153,6 +168,7 @@ final class AppSettings {
     defaults.set(soundEnabled, forKey: Key.soundEnabled)
     defaults.set(tickEnabled, forKey: Key.tickEnabled)
     defaults.set(hideMenuBarTime, forKey: Key.hideMenuBarTime)
+    defaults.set(notificationsEnabled, forKey: Key.notificationsEnabled)
   }
 
   // MARK: - Phase Duration

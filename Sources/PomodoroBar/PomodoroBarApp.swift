@@ -16,6 +16,15 @@ struct PomodoroBarApp: App {
     _focusGuard = State(initialValue: g)
     _statistics = State(initialValue: st)
     _timer = State(initialValue: PomodoroTimer(settings: s, focusGuard: g, statistics: st))
+
+    // Ask for notification permission up front (no-op outside an app bundle,
+    // and the system only ever prompts once) so the first phase-completion
+    // notification can actually be delivered.
+    if s.notificationsEnabled {
+      Task { @MainActor in
+        await NotificationManager.requestAuthorizationIfNeeded()
+      }
+    }
   }
 
   var body: some Scene {

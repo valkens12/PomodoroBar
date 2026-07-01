@@ -155,7 +155,8 @@ final class PomodoroTimer {
   }
 
   func skip() {
-    advancePhase()
+    // Deliberate user action — no notification for a transition they caused.
+    advancePhase(notify: false)
   }
 
   // MARK: - Ticker
@@ -200,11 +201,13 @@ final class PomodoroTimer {
 
     if remainingSeconds <= 0 {
       remainingSeconds = 0
-      advancePhase()
+      advancePhase(notify: true)
     }
   }
 
-  private func advancePhase() {
+  /// Moves to the next phase. `notify` is true only for natural completions
+  /// (countdown reached zero) — manual skips stay silent.
+  private func advancePhase(notify: Bool) {
     // Phase we are leaving.
     let leavingPhase = phase
 
@@ -257,6 +260,15 @@ final class PomodoroTimer {
     } else {
       stopTicker()
       runState = .idle
+    }
+
+    if notify, settings.notificationsEnabled {
+      NotificationManager.postPhaseChange(
+        finished: leavingPhase,
+        next: nextPhase,
+        nextMinutes: settings.duration(for: nextPhase) / 60,
+        autoStarted: shouldAutoStart,
+      )
     }
   }
 
