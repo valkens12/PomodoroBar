@@ -23,6 +23,8 @@ struct MenuContentView: View {
   /// a scale + glow pulse on the ring and a bump on the just-filled dot.
   @State private var celebrationPulse = false
 
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
   var body: some View {
     VStack(spacing: 16) {
       phaseHeader
@@ -34,6 +36,10 @@ struct MenuContentView: View {
       }
 
       sessionDots
+
+      if statistics.todaySessions > 0 {
+        todaySummary
+      }
 
       primaryControls
 
@@ -58,7 +64,7 @@ struct MenuContentView: View {
         .foregroundStyle(Theme.color(for: timer.phase))
       Text(timer.phase.label)
         .font(Typography.phaseTitle)
-        .foregroundStyle(Theme.color(for: timer.phase))
+        .foregroundStyle(Theme.textColor(for: timer.phase))
       Spacer()
     }
     .animation(.easeInOut(duration: 0.35), value: timer.phase)
@@ -97,6 +103,9 @@ struct MenuContentView: View {
       "\(timer.phase.label), \(timer.formattedRemaining) remaining, \(runStateLabel)"
     )
     .onChange(of: timer.focusCompletionTick) {
+      // The pulse is purely celebratory — skip it entirely under Reduce
+      // Motion, matching the start pop in CircularProgressView.
+      guard !reduceMotion else { return }
       celebrationPulse = true
       Task {
         try? await Task.sleep(for: .milliseconds(380))
@@ -106,7 +115,8 @@ struct MenuContentView: View {
   }
 
   /// Banner shown when the timer is running but no focus app is frontmost.
-  /// The timer holds (does not decrement) in this state.
+  /// The timer holds (does not decrement) in this state. Offers a one-click
+  /// jump back into the first focus app so the banner isn't a dead end.
   private var waitingBanner: some View {
     VStack(spacing: 4) {
       HStack(spacing: 6) {
@@ -115,9 +125,11 @@ struct MenuContentView: View {
           .foregroundStyle(Theme.vineGreen)
         Text("Paused — open a focus app")
           .font(Typography.bannerTitle)
-          .foregroundStyle(Theme.vineGreen)
+          .foregroundStyle(Theme.textColor(for: .longBreak))
         Spacer()
       }
+      .accessibilityElement(children: .combine)
+      .accessibilityLabel("Timer paused, waiting for a focus app to become active")
 
       if focusGuard.frontmostBundleId != nil,
         !focusGuard.isFocusAppActive {
@@ -133,12 +145,29 @@ struct MenuContentView: View {
           Spacer()
         }
       }
+
+      if let firstApp = focusGuard.focusApps.first {
+        HStack {
+          Button {
+            focusGuard.openFirstFocusApp()
+          } label: {
+            Label("Open \(firstApp.name)", systemImage: "arrow.up.forward.app")
+              .font(Typography.bannerDetail)
+          }
+          .buttonStyle(.borderless)
+          .tint(Theme.textColor(for: .longBreak))
+          .help("Bring \(firstApp.name) to the front so the timer resumes")
+          .accessibilityLabel("Open \(firstApp.name)")
+          Spacer()
+        }
+      }
     }
     .padding(.horizontal, 10)
     .padding(.vertical, 6)
-    .background(Theme.vineGreen.opacity(0.12), in: Capsule())
-    .accessibilityElement(children: .combine)
-    .accessibilityLabel("Timer paused, waiting for a focus app to become active")
+    .background(
+      Theme.vineGreen.opacity(0.12),
+      in: RoundedRectangle(cornerRadius: 10, style: .continuous),
+    )
   }
 
   private var sessionDots: some View {
@@ -161,6 +190,21 @@ struct MenuContentView: View {
     )
   }
 
+  /// One-line glance at today's progress, surfacing the statistics that
+  /// otherwise live three clicks away in Settings.
+  private var todaySummary: some View {
+    Text(
+      "Today: \(statistics.todayMinutes)m · \(statistics.todaySessions) "
+      + (statistics.todaySessions == 1 ? "session" : "sessions")
+    )
+    .font(Typography.stateCaption)
+    .foregroundStyle(.secondary)
+    .accessibilityLabel(
+      "Today: \(statistics.todayMinutes) focus minutes, "
+      + "\(statistics.todaySessions) sessions"
+    )
+  }
+
   private var primaryControls: some View {
     Button {
       withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
@@ -178,8 +222,17 @@ struct MenuContentView: View {
     .buttonStyle(.borderedProminent)
     .tint(Theme.color(for: timer.phase))
     .controlSize(.large)
+    .keyboardShortcut(.space, modifiers: [])
+    .help("\(primaryButtonTitle) the timer (Space)")
     .animation(.spring(response: 0.3, dampingFraction: 0.7), value: timer.runState)
     .accessibilityLabel(primaryButtonTitle)
+  }
+
+  /// Reset is a no-op when the timer is idle at the top of a phase, so it's
+  /// disabled there; Skip stays enabled because advancing the phase is
+  /// meaningful even while idle.
+  private var isResetNoOp: Bool {
+    timer.runState == .idle && timer.remainingSeconds == timer.totalSeconds
   }
 
   private var secondaryControls: some View {
@@ -191,6 +244,9 @@ struct MenuContentView: View {
           .frame(maxWidth: .infinity)
       }
       .buttonStyle(.bordered)
+      .disabled(isResetNoOp)
+      .keyboardShortcut("r")
+      .help("Restart the current phase from the beginning (⌘R)")
       .accessibilityLabel("Reset timer")
 
       Button {
@@ -200,6 +256,8 @@ struct MenuContentView: View {
           .frame(maxWidth: .infinity)
       }
       .buttonStyle(.bordered)
+      .keyboardShortcut("s")
+      .help("Skip ahead to the next phase (⌘S)")
       .accessibilityLabel("Skip to next phase")
     }
   }
@@ -213,6 +271,8 @@ struct MenuContentView: View {
         Label("Settings…", systemImage: "gearshape")
       }
       .buttonStyle(.borderless)
+      .keyboardShortcut(",")
+      .help("Open PomodoroBar settings (⌘,)")
       .accessibilityLabel("Open settings")
 
       Spacer()
@@ -221,6 +281,8 @@ struct MenuContentView: View {
         NSApp.terminate(nil)
       }
       .buttonStyle(.borderless)
+      .keyboardShortcut("q")
+      .help("Quit PomodoroBar (⌘Q)")
       .accessibilityLabel("Quit PomodoroBar")
     }
     .font(Typography.compactLabel)
