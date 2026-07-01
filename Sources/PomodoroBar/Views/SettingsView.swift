@@ -6,8 +6,15 @@ import SwiftUI
 // Organized as a three-tab TabView (General / Focus Apps / Statistics) so the
 // growing configuration surface stays scannable. The General tab preserves the
 // original duration/cycle/automation/sound form; Focus Apps and Statistics live
-// in their own files. The window activates the app on appear so it comes
-// forward reliably from the menu bar popover of an accessory (LSUIElement) app.
+// in their own files.
+//
+// Focus handling: the MenuBarExtra popover is a *non-activating* panel, so
+// opening Settings from it leaves the app inactive — the window orders in but
+// never becomes key, and keyboard input (the duration fields especially) goes
+// nowhere. While this window is open the app temporarily becomes a regular
+// app (`.regular` activation policy, which adds a Dock icon for that span) so
+// the window can hold key focus like any normal window, and the hosting
+// window is made key explicitly the moment it exists.
 struct SettingsView: View {
   @Environment(AppSettings.self) private var settings
   @Environment(FocusGuard.self) private var focusGuard
@@ -24,10 +31,41 @@ struct SettingsView: View {
       StatisticsTab()
         .tabItem { Label("Statistics", systemImage: "chart.bar.fill") }
     }
-    .frame(minWidth: 460, minHeight: 420)
+    .frame(
+      minWidth: 460, idealWidth: 520, maxWidth: 640,
+      minHeight: 420, idealHeight: 480, maxHeight: 640,
+    )
+    .background(WindowFocusGrabber())
     .onAppear {
-      // Bring the settings window forward (accessory app does not auto-activate).
+      // Accessory apps opened from a non-activating panel don't become
+      // active on their own; without .regular the window never becomes key.
+      NSApp.setActivationPolicy(.regular)
       NSApp.activate(ignoringOtherApps: true)
+    }
+    .onDisappear {
+      // Drop back to a pure menu bar app once the window closes.
+      NSApp.setActivationPolicy(.accessory)
+    }
+  }
+}
+
+// MARK: - WindowFocusGrabber
+
+/// Makes the hosting window key as soon as it exists. `NSApp.activate` alone
+/// brings the app forward but does not hand a freshly created settings window
+/// keyboard focus — without this, text fields look editable but ignore typing
+/// until the user cmd-tabs away and back.
+private struct WindowFocusGrabber: NSViewRepresentable {
+  func makeNSView(context: Context) -> NSView {
+    FocusGrabberView()
+  }
+
+  func updateNSView(_ nsView: NSView, context: Context) {}
+
+  private final class FocusGrabberView: NSView {
+    override func viewDidMoveToWindow() {
+      super.viewDidMoveToWindow()
+      window?.makeKeyAndOrderFront(nil)
     }
   }
 }
@@ -40,10 +78,15 @@ struct SettingsView: View {
 private struct GeneralTab: View {
   @Environment(AppSettings.self) private var settings
 
+  /// Mirrors `SMAppService` registration state; synced on appear so changes
+  /// made in System Settings > Login Items are reflected too.
+  @State private var launchAtLogin = false
+
   var body: some View {
     @Bindable var settings = settings
 
     Form {
+      startupSection
       menuBarSection(settings: settings)
       durationsSection(settings: settings)
       cycleSection(settings: settings)
@@ -51,6 +94,35 @@ private struct GeneralTab: View {
       soundSection(settings: settings)
     }
     .formStyle(.grouped)
+    .onAppear {
+      launchAtLogin = LoginItem.isEnabled
+    }
+  }
+
+  private var startupSection: some View {
+    Section {
+      Toggle(isOn: launchAtLoginBinding) {
+        settingLabel("Launch at login", systemImage: "power", tint: Theme.tomatoOrange)
+      }
+      .disabled(!LoginItem.isSupported)
+    } header: {
+      Text("Startup")
+    } footer: {
+      Text(
+        LoginItem.isSupported
+          ? "Open PomodoroBar automatically when you log in."
+          : "Launch at login is available when running the installed app."
+      )
+    }
+  }
+
+  /// Writes through to `SMAppService` and reads back the *actual* state, so a
+  /// failed registration snaps the toggle back instead of showing a lie.
+  private var launchAtLoginBinding: Binding<Bool> {
+    Binding(
+      get: { launchAtLogin },
+      set: { launchAtLogin = LoginItem.setEnabled($0) },
+    )
   }
 
   @ViewBuilder
@@ -58,8 +130,11 @@ private struct GeneralTab: View {
     @Bindable var settings = settings
     Section {
       Toggle(isOn: $settings.hideMenuBarTime) {
-        Label("Hide time, show ripening tomato", systemImage: "leaf.fill")
-          .foregroundStyle(Theme.leafGreen)
+        settingLabel(
+          "Hide time, show ripening tomato",
+          systemImage: "leaf.fill",
+          tint: Theme.leafGreen,
+        )
       }
     } header: {
       Text("Menu Bar")
@@ -78,26 +153,20 @@ private struct GeneralTab: View {
     @Bindable var settings = settings
     Section {
       stepperRow(
-        label: Label("Focus", systemImage: "brain.head.profile")
-          .foregroundStyle(Theme.tomatoRed),
-        value: settings.focusMinutes,
-        range: 5...90,
+        label: settingLabel("Focus", systemImage: "brain.head.profile", tint: Theme.tomatoRed),
+        range: AppSettings.Bounds.focusMinutes,
         unit: "min",
         binding: $settings.focusMinutes,
       )
       stepperRow(
-        label: Label("Short Break", systemImage: "cup.and.saucer")
-          .foregroundStyle(Theme.leafGreen),
-        value: settings.shortBreakMinutes,
-        range: 1...30,
+        label: settingLabel("Short Break", systemImage: "cup.and.saucer", tint: Theme.leafGreen),
+        range: AppSettings.Bounds.shortBreakMinutes,
         unit: "min",
         binding: $settings.shortBreakMinutes,
       )
       stepperRow(
-        label: Label("Long Break", systemImage: "leaf")
-          .foregroundStyle(Theme.vineGreen),
-        value: settings.longBreakMinutes,
-        range: 5...60,
+        label: settingLabel("Long Break", systemImage: "leaf", tint: Theme.vineGreen),
+        range: AppSettings.Bounds.longBreakMinutes,
         unit: "min",
         binding: $settings.longBreakMinutes,
       )
@@ -113,10 +182,10 @@ private struct GeneralTab: View {
     @Bindable var settings = settings
     Section {
       stepperRow(
-        label: Label("Sessions Before Long Break", systemImage: "repeat")
-          .foregroundStyle(Theme.tomatoOrange),
-        value: settings.sessionsBeforeLongBreak,
-        range: 2...8,
+        label: settingLabel(
+          "Sessions Before Long Break", systemImage: "repeat", tint: Theme.tomatoOrange,
+        ),
+        range: AppSettings.Bounds.sessionsBeforeLongBreak,
         unit: settings.sessionsBeforeLongBreak == 1 ? "session" : "sessions",
         binding: $settings.sessionsBeforeLongBreak,
       )
@@ -132,12 +201,10 @@ private struct GeneralTab: View {
     @Bindable var settings = settings
     Section {
       Toggle(isOn: $settings.autoStartBreaks) {
-        Label("Auto-start breaks", systemImage: "play.circle")
-          .foregroundStyle(Theme.leafGreen)
+        settingLabel("Auto-start breaks", systemImage: "play.circle", tint: Theme.leafGreen)
       }
       Toggle(isOn: $settings.autoStartFocus) {
-        Label("Auto-start focus", systemImage: "arrow.forward.circle")
-          .foregroundStyle(Theme.tomatoRed)
+        settingLabel("Auto-start focus", systemImage: "arrow.forward.circle", tint: Theme.tomatoRed)
       }
     } header: {
       Text("Automation")
@@ -150,31 +217,58 @@ private struct GeneralTab: View {
   private func soundSection(settings: AppSettings) -> some View {
     @Bindable var settings = settings
     Section {
+      Toggle(isOn: $settings.notificationsEnabled) {
+        settingLabel(
+          "Phase change notification", systemImage: "bell.badge", tint: Theme.tomatoRed,
+        )
+      }
+      .disabled(!NotificationManager.isSupported)
+      .onChange(of: settings.notificationsEnabled) { _, enabled in
+        if enabled {
+          Task { await NotificationManager.requestAuthorizationIfNeeded() }
+        }
+      }
       Toggle(isOn: $settings.soundEnabled) {
-        Label("Phase change sound", systemImage: "bell")
-          .foregroundStyle(Theme.tomatoOrange)
+        settingLabel("Phase change sound", systemImage: "bell", tint: Theme.tomatoOrange)
       }
       Toggle(isOn: $settings.tickEnabled) {
-        Label("Tick every second", systemImage: "metronome")
-          .foregroundStyle(Theme.vineGreen)
+        settingLabel("Tick every second", systemImage: "metronome", tint: Theme.vineGreen)
       }
     } header: {
-      Text("Sound")
+      Text("Alerts")
     } footer: {
-      Text("Audio cues for phase changes and focus ticks.")
+      Text(
+        "A notification makes the end of a session visible even when another "
+        + "app is full-screen. Sounds play for phase changes and focus ticks."
+      )
     }
   }
 
   // MARK: - Helpers
 
-  /// A labeled row that shows the current value and lets the user step it.
-  /// The value is rendered as its own Text (NOT as the Stepper's label, which
-  /// `.labelsHidden()` would conceal — that made the number invisible and the
-  /// arrows appear to do nothing).
+  /// A form label with neutral text and a tinted SF Symbol — the tomato
+  /// palette stays on the icon, where contrast requirements are looser and
+  /// the text remains fully legible in both appearances.
+  private func settingLabel(
+    _ title: String,
+    systemImage: String,
+    tint: Color,
+  ) -> some View {
+    Label {
+      Text(title)
+    } icon: {
+      Image(systemName: systemImage)
+        .foregroundStyle(tint)
+    }
+  }
+
+  /// A labeled row with a typed numeric field (so the value can be entered
+  /// directly from the keyboard) plus a Stepper for click adjustment. The
+  /// field's binding clamps to `range` on commit — typing a value outside the
+  /// bound snaps to the nearest edge instead of silently accepting it.
   @ViewBuilder
   private func stepperRow(
     label: some View,
-    value: Int,
     range: ClosedRange<Int>,
     unit: String,
     binding: Binding<Int>,
@@ -182,14 +276,31 @@ private struct GeneralTab: View {
     HStack {
       label
       Spacer()
-      Text("\(value) \(unit)")
+      TextField("", value: clampedBinding(binding, range: range), format: .number)
+        .frame(width: 40)
+        .multilineTextAlignment(.trailing)
         .font(.system(.body, design: .rounded).monospacedDigit())
-        .foregroundStyle(.primary)
+        .textFieldStyle(.roundedBorder)
+        .labelsHidden()
+        .accessibilityLabel(unit)
+      Text(unit)
+        .font(.system(.body, design: .rounded))
+        .foregroundStyle(.secondary)
       Stepper(value: binding, in: range) {
         EmptyView()
       }
       .labelsHidden()
     }
+  }
+
+  /// Wraps `binding` so out-of-range input clamps to `range` on commit,
+  /// instead of being persisted as-is (the underlying setting's `didSet`
+  /// only persists — it doesn't re-clamp — so clamping happens here).
+  private func clampedBinding(_ binding: Binding<Int>, range: ClosedRange<Int>) -> Binding<Int> {
+    Binding(
+      get: { binding.wrappedValue },
+      set: { binding.wrappedValue = min(max($0, range.lowerBound), range.upperBound) },
+    )
   }
 }
 

@@ -40,6 +40,7 @@ final class FocusGuard {
   }
 
   private(set) var frontmostBundleId: String?
+  private(set) var frontmostAppName: String?
 
   @ObservationIgnored
   private var observerTokens: [NSObjectProtocol] = []
@@ -99,6 +100,16 @@ final class FocusGuard {
     focusApps.removeAll { $0.id == app.id }
   }
 
+  /// Activates the first listed focus app — used by the popover's "waiting"
+  /// banner so the user can jump straight back to work with one click.
+  func openFirstFocusApp() {
+    guard let app = focusApps.first else { return }
+    NSWorkspace.shared.openApplication(
+      at: URL(fileURLWithPath: app.urlPath),
+      configuration: NSWorkspace.OpenConfiguration(),
+    )
+  }
+
   // MARK: - Monitoring
 
   func startMonitoring() {
@@ -129,7 +140,9 @@ final class FocusGuard {
   }
 
   func refreshFrontmost() {
-    frontmostBundleId = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+    let app = NSWorkspace.shared.frontmostApplication
+    frontmostBundleId = app?.bundleIdentifier
+    frontmostAppName = app?.localizedName
   }
 
   // MARK: - Persistence

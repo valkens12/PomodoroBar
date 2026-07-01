@@ -44,34 +44,13 @@ struct FocusAppsTab: View {
           }
         } else {
           ForEach(focusGuard.focusApps) { app in
-            HStack {
-              appIcon(for: app)
-                .accessibilityHidden(true)
-              Text(app.name)
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .font(.system(.body, design: .rounded))
-              Spacer()
-              Button(role: .destructive) {
-                focusGuard.remove(app)
-              } label: {
-                Image(systemName: "minus.circle.fill")
-                  .foregroundStyle(.red)
-              }
-              .buttonStyle(.borderless)
-              .accessibilityLabel("Remove \(app.name)")
+            FocusAppRow(app: app, icon: { appIcon(for: app) }) {
+              focusGuard.remove(app)
             }
           }
         }
 
-        Button {
-          showPicker = true
-        } label: {
-          Label("Add App…", systemImage: "plus.circle.fill")
-            .foregroundStyle(Theme.tomatoRed)
-        }
-        .buttonStyle(.borderless)
-        .accessibilityHint("Choose an application to add to the focus list.")
+        addAppMenu
       } header: {
         Text("Focus Apps")
       } footer: {
@@ -82,10 +61,58 @@ struct FocusAppsTab: View {
     .fileImporter(
       isPresented: $showPicker,
       allowedContentTypes: [UTType.application],
-      allowsMultipleSelection: false,
+      allowsMultipleSelection: true,
     ) { result in
       handlePick(result)
     }
+  }
+
+  // MARK: - Add Menu
+
+  /// Adding an app offers the currently running apps first — one click,
+  /// no trip through the open panel — with "Choose from Finder…" as the
+  /// fallback for apps that aren't running.
+  private var addAppMenu: some View {
+    Menu {
+      let candidates = runningAppCandidates
+      if !candidates.isEmpty {
+        ForEach(candidates, id: \.processIdentifier) { app in
+          Button(app.localizedName ?? app.bundleIdentifier ?? "Unknown") {
+            if let url = app.bundleURL {
+              focusGuard.add(url: url)
+            }
+          }
+        }
+        Divider()
+      }
+      Button("Choose from Finder…") {
+        showPicker = true
+      }
+    } label: {
+      Label("Add App…", systemImage: "plus.circle.fill")
+        .foregroundStyle(Theme.tomatoRed)
+    }
+    .menuStyle(.button)
+    .buttonStyle(.borderless)
+    .fixedSize()
+    .accessibilityHint("Choose an application to add to the focus list.")
+  }
+
+  /// Running apps with a regular activation policy that aren't already in the
+  /// list, sorted by name. Recomputed each time the menu opens.
+  private var runningAppCandidates: [NSRunningApplication] {
+    let existing = Set(focusGuard.focusApps.map(\.bundleId))
+    return NSWorkspace.shared.runningApplications
+      .filter { $0.activationPolicy == .regular }
+      .filter { app in
+        guard let bundleId = app.bundleIdentifier else { return false }
+        return !existing.contains(bundleId)
+          && bundleId != Bundle.main.bundleIdentifier
+      }
+      .sorted {
+        ($0.localizedName ?? "").localizedCaseInsensitiveCompare($1.localizedName ?? "")
+          == .orderedAscending
+      }
   }
 
   // MARK: - Helpers
@@ -110,16 +137,59 @@ struct FocusAppsTab: View {
     }
   }
 
-  /// Processes the file-importer result: on success, registers the picked .app
-  /// with the FocusGuard; on failure, logs and ignores.
+  /// Processes the file-importer result: on success, registers every picked
+  /// .app with the FocusGuard; on failure, logs and ignores.
   private func handlePick(_ result: Result<[URL], Error>) {
     switch result {
     case .success(let urls):
-      guard let url = urls.first else { return }
-      focusGuard.add(url: url)
+      for url in urls {
+        focusGuard.add(url: url)
+      }
     case .failure(let error):
       // Non-fatal: the user cancelled or the URL was unreadable.
       print("FocusAppsTab: file importer failed: \(error.localizedDescription)")
+    }
+  }
+}
+
+// MARK: - FocusAppRow
+
+/// A single focus-app row. The destructive remove button only appears on
+/// hover, matching system list patterns (Mail, Reminders) instead of
+/// permanently showing a red icon next to every row.
+private struct FocusAppRow<Icon: View>: View {
+  let app: FocusApp
+  @ViewBuilder let icon: () -> Icon
+  let onRemove: () -> Void
+
+  @State private var isHovering = false
+
+  var body: some View {
+    HStack {
+      icon()
+        .accessibilityHidden(true)
+      Text(app.name)
+        .lineLimit(1)
+        .truncationMode(.middle)
+        .font(.system(.body, design: .rounded))
+      Spacer()
+      // Opacity (not `.hidden()` or a conditional) so the button stays in the
+      // accessibility tree and reachable via VoiceOver/keyboard, which never
+      // "hover" — only its visibility for sighted pointer users is gated.
+      Button(role: .destructive, action: onRemove) {
+        Image(systemName: "minus.circle.fill")
+          .foregroundStyle(.red)
+      }
+      .buttonStyle(.borderless)
+      .opacity(isHovering ? 1 : 0)
+      .help("Remove \(app.name) from the focus list")
+      .accessibilityLabel("Remove \(app.name)")
+    }
+    .contentShape(Rectangle())
+    .onHover { hovering in
+      withAnimation(.easeOut(duration: 0.12)) {
+        isHovering = hovering
+      }
     }
   }
 }

@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// Visual theme for PomodoroBar: a refined tomato-plant palette plus the
@@ -19,11 +20,17 @@ enum Theme {
   /// Fresh calyx leaf green — used for the calyx and the short-break phase.
   static let leafGreen: Color = Color(red: 0.45, green: 0.75, blue: 0.30)
 
-  /// Warm cream — the top of the popover gradient.
-  static let cream: Color = Color(red: 0.99, green: 0.96, blue: 0.92)
-
-  /// Soft tomato blush — cards and the bottom of the popover gradient.
-  static let tomatoBlush: Color = Color(red: 0.98, green: 0.93, blue: 0.91)
+  /// Card surface for content-layer elements (stat cards). The popover itself
+  /// uses real Liquid Glass (`.glassEffect()`), not this — this is only for
+  /// surfaces that sit *inside* an opaque window (the Settings scene), which
+  /// doesn't get glass automatically and needs an explicit dark variant.
+  static let cardBackground: Color = Color(
+    nsColor: NSColor(name: nil) { appearance in
+      appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+        ? NSColor(red: 0.22, green: 0.16, blue: 0.15, alpha: 1)
+        : NSColor(red: 0.98, green: 0.93, blue: 0.91, alpha: 1)
+    }
+  )
 
   // MARK: - Phase Palettes
 
@@ -52,8 +59,10 @@ enum Theme {
     }
   }
 
-  /// The primary accent color for the given phase, used for labels, buttons,
-  /// and the status bar indicator dot.
+  /// The primary accent color for the given phase, used for fills, buttons,
+  /// gradients, and the status bar indicator dot. For *text* use
+  /// `textColor(for:)` — these fill accents (leafGreen especially) fall short
+  /// of the 4.5:1 contrast minimum against a light window background.
   static func color(for phase: PomodoroTimer.Phase) -> Color {
     switch phase {
     case .focus:
@@ -65,20 +74,40 @@ enum Theme {
     }
   }
 
-  // MARK: - Surfaces
+  /// Phase accent tuned for use as text: darkened in light mode and
+  /// brightened in dark mode so labels reach at least 4.5:1 against the
+  /// window background in both appearances.
+  static func textColor(for phase: PomodoroTimer.Phase) -> Color {
+    switch phase {
+    case .focus:
+      return dynamic(
+        light: NSColor(red: 0.78, green: 0.16, blue: 0.13, alpha: 1),
+        dark: NSColor(red: 1.00, green: 0.55, blue: 0.48, alpha: 1),
+      )
+    case .shortBreak:
+      return dynamic(
+        light: NSColor(red: 0.27, green: 0.52, blue: 0.16, alpha: 1),
+        dark: NSColor(red: 0.62, green: 0.85, blue: 0.45, alpha: 1),
+      )
+    case .longBreak:
+      return dynamic(
+        light: NSColor(red: 0.24, green: 0.46, blue: 0.17, alpha: 1),
+        dark: NSColor(red: 0.55, green: 0.80, blue: 0.45, alpha: 1),
+      )
+    }
+  }
 
-  /// Soft tomato-blush card background with a faint vine-green separator tone.
-  static let cardBackground: Color = tomatoBlush
-
-  /// Vertical popover gradient: warm cream at the top fading to soft tomato
-  /// blush at the bottom.
-  static func popoverGradient() -> LinearGradient {
-    LinearGradient(
-      colors: [cream, tomatoBlush],
-      startPoint: .top,
-      endPoint: .bottom,
+  /// A `Color` that resolves per-appearance, following the same pattern as
+  /// `cardBackground`.
+  private static func dynamic(light: NSColor, dark: NSColor) -> Color {
+    Color(
+      nsColor: NSColor(name: nil) { appearance in
+        appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? dark : light
+      }
     )
   }
+
+  // MARK: - Surfaces
 
   /// Pair of radial-gradient stops for the tomato body, tinted per phase.
   /// Returns (bright, deep) where `bright` is the sun-lit upper-left and

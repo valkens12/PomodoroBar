@@ -65,6 +65,11 @@ final class PomodoroTimer {
   var remainingSeconds: Int
   var completedFocusSessions: Int
 
+  /// Bumped every time a focus session completes. Views observe this via
+  /// `.onChange` to trigger a one-shot completion animation; the value
+  /// itself carries no meaning beyond "something changed."
+  private(set) var focusCompletionTick: Int = 0
+
   @ObservationIgnored private var cancellable: AnyCancellable?
 
   // MARK: - Init
@@ -150,7 +155,8 @@ final class PomodoroTimer {
   }
 
   func skip() {
-    advancePhase()
+    // Deliberate user action — no notification for a transition they caused.
+    advancePhase(notify: false)
   }
 
   // MARK: - Ticker
@@ -195,11 +201,13 @@ final class PomodoroTimer {
 
     if remainingSeconds <= 0 {
       remainingSeconds = 0
-      advancePhase()
+      advancePhase(notify: true)
     }
   }
 
-  private func advancePhase() {
+  /// Moves to the next phase. `notify` is true only for natural completions
+  /// (countdown reached zero) — manual skips stay silent.
+  private func advancePhase(notify: Bool) {
     // Phase we are leaving.
     let leavingPhase = phase
 
@@ -209,6 +217,7 @@ final class PomodoroTimer {
     if leavingPhase == .focus {
       statistics.recordFocusCompletion(minutes: settings.focusMinutes)
       completedFocusSessions += 1
+      focusCompletionTick += 1
     }
 
     // Determine the next phase.
@@ -251,6 +260,15 @@ final class PomodoroTimer {
     } else {
       stopTicker()
       runState = .idle
+    }
+
+    if notify, settings.notificationsEnabled {
+      NotificationManager.postPhaseChange(
+        finished: leavingPhase,
+        next: nextPhase,
+        nextMinutes: settings.duration(for: nextPhase) / 60,
+        autoStarted: shouldAutoStart,
+      )
     }
   }
 

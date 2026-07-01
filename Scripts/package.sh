@@ -24,6 +24,7 @@ swift build -c release
 
 RELEASE_BIN="${PROJECT_ROOT}/.build/release/${APP_NAME}"
 INFO_PLIST="${PROJECT_ROOT}/Resources/Info.plist"
+APP_ICON="${PROJECT_ROOT}/Resources/AppIcon.icns"
 
 if [[ ! -f "${RELEASE_BIN}" ]]; then
   echo "error: release executable not found at ${RELEASE_BIN}" >&2
@@ -33,6 +34,10 @@ if [[ ! -f "${INFO_PLIST}" ]]; then
   echo "error: Info.plist not found at ${INFO_PLIST}" >&2
   exit 1
 fi
+if [[ ! -f "${APP_ICON}" ]]; then
+  echo "error: AppIcon.icns not found at ${APP_ICON} (run ./Scripts/generate-icon.sh)" >&2
+  exit 1
+fi
 
 echo "==> Assembling bundle at ${APP_DIR}..."
 rm -rf "${APP_DIR}"
@@ -40,7 +45,14 @@ mkdir -p "${MACOS_DIR}" "${RESOURCES_DIR}"
 
 cp "${RELEASE_BIN}" "${MACOS_DIR}/${APP_NAME}"
 cp "${INFO_PLIST}" "${CONTENTS_DIR}/Info.plist"
+cp "${APP_ICON}" "${RESOURCES_DIR}/AppIcon.icns"
 chmod 755 "${MACOS_DIR}/${APP_NAME}"
+
+echo "==> Code signing..."
+CODESIGN_IDENTITY="${CODESIGN_IDENTITY:--}"
+codesign --force --deep --options runtime --timestamp=none \
+  --sign "${CODESIGN_IDENTITY}" "${APP_DIR}"
+codesign --verify --deep --strict "${APP_DIR}"
 
 echo "==> Done."
 echo "${APP_DIR}"
