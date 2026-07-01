@@ -6,8 +6,15 @@ import SwiftUI
 // Organized as a three-tab TabView (General / Focus Apps / Statistics) so the
 // growing configuration surface stays scannable. The General tab preserves the
 // original duration/cycle/automation/sound form; Focus Apps and Statistics live
-// in their own files. The window activates the app on appear so it comes
-// forward reliably from the menu bar popover of an accessory (LSUIElement) app.
+// in their own files.
+//
+// Focus handling: the MenuBarExtra popover is a *non-activating* panel, so
+// opening Settings from it leaves the app inactive — the window orders in but
+// never becomes key, and keyboard input (the duration fields especially) goes
+// nowhere. While this window is open the app temporarily becomes a regular
+// app (`.regular` activation policy, which adds a Dock icon for that span) so
+// the window can hold key focus like any normal window, and the hosting
+// window is made key explicitly the moment it exists.
 struct SettingsView: View {
   @Environment(AppSettings.self) private var settings
   @Environment(FocusGuard.self) private var focusGuard
@@ -28,9 +35,37 @@ struct SettingsView: View {
       minWidth: 460, idealWidth: 520, maxWidth: 640,
       minHeight: 420, idealHeight: 480, maxHeight: 640,
     )
+    .background(WindowFocusGrabber())
     .onAppear {
-      // Bring the settings window forward (accessory app does not auto-activate).
+      // Accessory apps opened from a non-activating panel don't become
+      // active on their own; without .regular the window never becomes key.
+      NSApp.setActivationPolicy(.regular)
       NSApp.activate(ignoringOtherApps: true)
+    }
+    .onDisappear {
+      // Drop back to a pure menu bar app once the window closes.
+      NSApp.setActivationPolicy(.accessory)
+    }
+  }
+}
+
+// MARK: - WindowFocusGrabber
+
+/// Makes the hosting window key as soon as it exists. `NSApp.activate` alone
+/// brings the app forward but does not hand a freshly created settings window
+/// keyboard focus — without this, text fields look editable but ignore typing
+/// until the user cmd-tabs away and back.
+private struct WindowFocusGrabber: NSViewRepresentable {
+  func makeNSView(context: Context) -> NSView {
+    FocusGrabberView()
+  }
+
+  func updateNSView(_ nsView: NSView, context: Context) {}
+
+  private final class FocusGrabberView: NSView {
+    override func viewDidMoveToWindow() {
+      super.viewDidMoveToWindow()
+      window?.makeKeyAndOrderFront(nil)
     }
   }
 }
