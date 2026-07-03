@@ -54,6 +54,17 @@ final class PomodoroTimer {
     case paused
   }
 
+  // MARK: - FocusWaitReason
+
+  /// Why the countdown is currently held while `runState == .running`, so the
+  /// UI can distinguish "wrong app entirely" from "right app (Safari), wrong
+  /// tab" instead of a single undifferentiated "waiting" boolean.
+  enum FocusWaitReason {
+    case notWaiting
+    case wrongApp
+    case wrongTab
+  }
+
   // MARK: - Stored Properties
 
   private let settings: AppSettings
@@ -111,12 +122,18 @@ final class PomodoroTimer {
   }
 
   /// True when the timer is notionally running but the countdown is suspended
-  /// because no focus app is frontmost. UI surfaces a "paused — open a focus
-  /// app" banner in this state.
+  /// because no focus app is frontmost (or, for Safari, the wrong tab). UI
+  /// surfaces a "paused" banner in this state.
   var isWaitingForFocusApp: Bool {
-    runState == .running
-      && focusGuard.enabled
-      && !focusGuard.isFocusAppActive
+    focusWaitReason != .notWaiting
+  }
+
+  /// Why the countdown is currently held, if it is. See `FocusWaitReason`.
+  var focusWaitReason: FocusWaitReason {
+    guard runState == .running, focusGuard.enabled, !focusGuard.isFocusAppActive else {
+      return .notWaiting
+    }
+    return focusGuard.isTabMismatch ? .wrongTab : .wrongApp
   }
 
   // MARK: - Public Actions
@@ -125,18 +142,21 @@ final class PomodoroTimer {
     guard runState != .running else { return }
     runState = .running
     startTicker()
+    focusGuard.setTimerRunning(true)
   }
 
   func pause() {
     guard runState == .running else { return }
     runState = .paused
     stopTicker()
+    focusGuard.setTimerRunning(false)
   }
 
   func resume() {
     guard runState == .paused else { return }
     runState = .running
     startTicker()
+    focusGuard.setTimerRunning(true)
   }
 
   func toggleStartPause() {
@@ -152,6 +172,7 @@ final class PomodoroTimer {
     stopTicker()
     runState = .idle
     remainingSeconds = totalSeconds
+    focusGuard.setTimerRunning(false)
   }
 
   func skip() {
@@ -261,6 +282,7 @@ final class PomodoroTimer {
       stopTicker()
       runState = .idle
     }
+    focusGuard.setTimerRunning(shouldAutoStart)
 
     if notify, settings.notificationsEnabled {
       NotificationManager.postPhaseChange(

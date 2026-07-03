@@ -1,6 +1,31 @@
 import Charts
 import SwiftUI
 
+/// Compact "45m" / "2h 5m" formatting for a focus-minute total. Switches to
+/// an hour-based format once the total exceeds 90 minutes — week/month
+/// totals routinely run into the hundreds of minutes, where "375m" reads far
+/// worse at a glance than "6h 15m".
+private func formattedFocusDuration(_ minutes: Int) -> String {
+  guard minutes > 90 else { return "\(minutes)m" }
+  let hours = minutes / 60
+  let remainder = minutes % 60
+  return remainder == 0 ? "\(hours)h" : "\(hours)h \(remainder)m"
+}
+
+/// VoiceOver-friendly counterpart to `formattedFocusDuration`, spelling out
+/// "hour(s)"/"minute(s)" instead of the compact "h"/"m" suffixes.
+private func accessibleFocusDuration(_ minutes: Int) -> String {
+  guard minutes > 90 else {
+    return "\(minutes) focus \(minutes == 1 ? "minute" : "minutes")"
+  }
+  let hours = minutes / 60
+  let remainder = minutes % 60
+  let hourPart = "\(hours) \(hours == 1 ? "hour" : "hours")"
+  guard remainder > 0 else { return "\(hourPart) focus time" }
+  let minutePart = "\(remainder) \(remainder == 1 ? "minute" : "minutes")"
+  return "\(hourPart) \(minutePart) focus time"
+}
+
 /// Focus-history statistics: today / week / month summaries, a 7-day bar chart,
 /// and a 30-day area trend. All marks are tomato-tinted to keep the aesthetic
 /// cohesive. A friendly empty state is shown when no sessions have been recorded.
@@ -119,7 +144,7 @@ struct StatisticsTab: View {
           AxisGridLine()
           AxisValueLabel {
             if let minutes = value.as(Int.self) {
-              Text("\(minutes)m")
+              Text(formattedFocusDuration(minutes))
             }
           }
         }
@@ -188,7 +213,7 @@ struct StatisticsTab: View {
           AxisGridLine()
           AxisValueLabel {
             if let minutes = value.as(Int.self) {
-              Text("\(minutes)m")
+              Text(formattedFocusDuration(minutes))
             }
           }
         }
@@ -204,7 +229,7 @@ struct StatisticsTab: View {
       Text(day.date, format: .dateTime.month(.abbreviated).day())
         .font(.system(.caption2, design: .rounded))
         .foregroundStyle(.secondary)
-      Text("\(day.minutes)m")
+      Text(formattedFocusDuration(day.minutes))
         .font(.system(.caption, design: .rounded).weight(.bold))
         .foregroundStyle(Theme.textColor(for: .focus))
     }
@@ -269,11 +294,13 @@ private struct StatCard: View {
           .foregroundStyle(.secondary)
       }
 
-      Text("\(minutes)")
+      Text(formattedFocusDuration(minutes))
         .font(.system(.largeTitle, design: .rounded).weight(.bold))
         .foregroundStyle(Theme.textColor(for: .focus))
         .monospacedDigit()
-        .accessibilityLabel("\(minutes) focus minutes")
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
+        .accessibilityLabel(accessibleFocusDuration(minutes))
 
       Text("\(sessions) \(sessions == 1 ? "session" : "sessions")")
         .font(.system(.footnote, design: .rounded))
