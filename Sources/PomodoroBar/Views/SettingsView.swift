@@ -3,22 +3,18 @@ import SwiftUI
 
 // Native macOS settings window for PomodoroBar.
 //
-// Organized as a three-tab TabView (General / Focus Apps / Statistics) so the
-// growing configuration surface stays scannable. The General tab preserves the
-// original duration/cycle/automation/sound form; Focus Apps and Statistics live
-// in their own files.
+// Organized as a two-tab TabView (General / Focus Apps) so the configuration
+// surface stays scannable. The General tab preserves the original
+// duration/cycle/automation/sound form; Focus Apps lives in its own file.
+// Statistics are content, not configuration, and live in their own window
+// (see `StatisticsView`).
 //
-// Focus handling: the MenuBarExtra popover is a *non-activating* panel, so
-// opening Settings from it leaves the app inactive — the window orders in but
-// never becomes key, and keyboard input (the duration fields especially) goes
-// nowhere. While this window is open the app temporarily becomes a regular
-// app (`.regular` activation policy, which adds a Dock icon for that span) so
-// the window can hold key focus like any normal window, and the hosting
-// window is made key explicitly the moment it exists.
+// Focus handling: see `regularActivationWindow()` — the MenuBarExtra popover
+// is a non-activating panel, so this window needs explicit activation-policy
+// and key-focus management to accept keyboard input.
 struct SettingsView: View {
   @Environment(AppSettings.self) private var settings
   @Environment(FocusGuard.self) private var focusGuard
-  @Environment(StatisticsStore.self) private var statistics
 
   var body: some View {
     TabView {
@@ -27,46 +23,12 @@ struct SettingsView: View {
 
       FocusAppsTab()
         .tabItem { Label("Focus Apps", systemImage: "lock.shield") }
-
-      StatisticsTab()
-        .tabItem { Label("Statistics", systemImage: "chart.bar.fill") }
     }
     .frame(
       minWidth: 460, idealWidth: 520, maxWidth: 640,
       minHeight: 420, idealHeight: 480, maxHeight: 640,
     )
-    .background(WindowFocusGrabber())
-    .onAppear {
-      // Accessory apps opened from a non-activating panel don't become
-      // active on their own; without .regular the window never becomes key.
-      NSApp.setActivationPolicy(.regular)
-      NSApp.activate(ignoringOtherApps: true)
-    }
-    .onDisappear {
-      // Drop back to a pure menu bar app once the window closes.
-      NSApp.setActivationPolicy(.accessory)
-    }
-  }
-}
-
-// MARK: - WindowFocusGrabber
-
-/// Makes the hosting window key as soon as it exists. `NSApp.activate` alone
-/// brings the app forward but does not hand a freshly created settings window
-/// keyboard focus — without this, text fields look editable but ignore typing
-/// until the user cmd-tabs away and back.
-private struct WindowFocusGrabber: NSViewRepresentable {
-  func makeNSView(context: Context) -> NSView {
-    FocusGrabberView()
-  }
-
-  func updateNSView(_ nsView: NSView, context: Context) {}
-
-  private final class FocusGrabberView: NSView {
-    override func viewDidMoveToWindow() {
-      super.viewDidMoveToWindow()
-      window?.makeKeyAndOrderFront(nil)
-    }
+    .regularActivationWindow()
   }
 }
 
@@ -78,9 +40,14 @@ private struct WindowFocusGrabber: NSViewRepresentable {
 private struct GeneralTab: View {
   @Environment(AppSettings.self) private var settings
 
-  /// Mirrors `SMAppService` registration state; synced on appear so changes
-  /// made in System Settings > Login Items are reflected too.
-  @State private var launchAtLogin = false
+  /// Mirrors `SMAppService` registration state; synced on appear and every
+  /// time the app becomes active again, so approving the item in System
+  /// Settings › Login Items is reflected the moment the user comes back.
+  @State private var loginItemStatus: LoginItem.Status = .unsupported
+
+  /// Human-readable reason the last (un)register attempt failed, shown
+  /// inline — a toggle that silently snaps back looks broken.
+  @State private var loginItemError: String?
 
   var body: some View {
     @Bindable var settings = settings
@@ -95,7 +62,12 @@ private struct GeneralTab: View {
     }
     .formStyle(.grouped)
     .onAppear {
-      launchAtLogin = LoginItem.isEnabled
+      loginItemStatus = LoginItem.status
+    }
+    .onReceive(
+      NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
+    ) { _ in
+      loginItemStatus = LoginItem.status
     }
   }
 
@@ -104,24 +76,63 @@ private struct GeneralTab: View {
       Toggle(isOn: launchAtLoginBinding) {
         settingLabel("Launch at login", systemImage: "power", tint: Theme.tomatoOrange)
       }
-      .disabled(!LoginItem.isSupported)
+      .disabled(loginItemStatus == .unsupported)
+
+      if loginItemStatus == .requiresApproval {
+        approvalNeededNotice
+      }
+
+      if let loginItemError {
+        HStack(spacing: 4) {
+          Image(systemName: "xmark.octagon.fill")
+            .foregroundStyle(.red)
+          Text(loginItemError)
+            .foregroundStyle(.secondary)
+        }
+        .font(.system(.caption, design: .rounded))
+      }
     } header: {
       Text("Startup")
     } footer: {
       Text(
-        LoginItem.isSupported
-          ? "Open PomodoroBar automatically when you log in."
-          : "Launch at login is available when running the installed app."
+        loginItemStatus == .unsupported
+          ? "Launch at login is available when running the installed app."
+          : "Open PomodoroBar automatically when you log in."
       )
     }
   }
 
-  /// Writes through to `SMAppService` and reads back the *actual* state, so a
-  /// failed registration snaps the toggle back instead of showing a lie.
+  /// A successful registration can still be withheld by macOS pending the
+  /// user's approval — surfaced here with a direct route to the approval
+  /// checkbox, instead of the toggle mysteriously snapping off.
+  private var approvalNeededNotice: some View {
+    HStack(spacing: 4) {
+      Image(systemName: "exclamationmark.triangle.fill")
+        .foregroundStyle(.orange)
+      Text("Needs your approval in Login Items.")
+        .foregroundStyle(.secondary)
+      Button("Open Settings…") {
+        LoginItem.openLoginItemsSettings()
+      }
+      .buttonStyle(.link)
+    }
+    .font(.system(.caption, design: .rounded))
+  }
+
+  /// Writes through to `SMAppService` and reads back the *actual* status.
+  /// "Requires approval" counts as on — the registration exists; only the
+  /// system's activation is pending — so the toggle holds the user's intent
+  /// while the notice explains the remaining step.
   private var launchAtLoginBinding: Binding<Bool> {
     Binding(
-      get: { launchAtLogin },
-      set: { launchAtLogin = LoginItem.setEnabled($0) },
+      get: {
+        loginItemStatus == .enabled || loginItemStatus == .requiresApproval
+      },
+      set: { enabled in
+        let result = LoginItem.setEnabled(enabled)
+        loginItemStatus = result.status
+        loginItemError = result.errorDescription
+      },
     )
   }
 
@@ -140,8 +151,9 @@ private struct GeneralTab: View {
       Text("Menu Bar")
     } footer: {
       Text(
-        "When on, the menu bar shows a tomato that ripens from green to red "
-        + "as the session progresses, instead of the countdown."
+        "The ripening tomato replaces the countdown, going green to red as "
+        + "the session progresses. The monochrome icon matches the built-in "
+        + "menu bar items and adapts to the menu bar's appearance."
       )
     }
   }
@@ -244,36 +256,6 @@ private struct GeneralTab: View {
     }
   }
 
-  // MARK: - Support section
-
-  /// Renders the official Ko-fi "Support me on Ko-fi" badge as a clickable
-  /// link. The badge is bundled as an image set (Resources/Assets.xcassets/
-  /// KoFiBadge.imageset), so the app never fetches it from the network and
-  /// the row works offline. The whole row is tappable, matching the visual
-  /// weight of the official button.
-  private var supportSection: some View {
-    Section {
-      Link(destination: Self.kofiURL) {
-        HStack {
-          Image("KoFiBadge")
-            .resizable()
-            .aspectRatio(contentMode: .fit)
-            .frame(height: 36)
-            .accessibilityLabel("Support me on Ko-fi (opens in your browser)")
-          Spacer()
-        }
-      }
-      .buttonStyle(.plain)
-    } header: {
-      Text("Support")
-    } footer: {
-      Text(
-        "If PomodoroBar helps you focus, you can buy me a coffee on Ko-fi. "
-        + "Totally optional, and it opens Ko-fi in your browser."
-      )
-    }
-  }
-
   // MARK: - Helpers
 
   /// A form label with neutral text and a tinted SF Symbol — the tomato
@@ -338,5 +320,4 @@ private struct GeneralTab: View {
   SettingsView()
     .environment(AppSettings())
     .environment(FocusGuard())
-    .environment(StatisticsStore())
 }
