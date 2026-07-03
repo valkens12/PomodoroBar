@@ -30,6 +30,9 @@ final class AppSettings {
     static let tickEnabled = "tickEnabled"
     static let hideMenuBarTime = "hideMenuBarTime"
     static let notificationsEnabled = "notificationsEnabled"
+    static let globalHotkeyEnabled = "globalHotkeyEnabled"
+    static let globalHotkeyKeyCode = "globalHotkeyKeyCode"
+    static let globalHotkeyModifiers = "globalHotkeyModifiers"
   }
 
   // MARK: - Stored Properties
@@ -104,6 +107,26 @@ final class AppSettings {
     }
   }
 
+  /// When true, a system-wide hotkey (`globalHotkey`) toggles start/pause
+  /// without opening the popover. Off by default — grabbing a global key
+  /// combination is opt-in behavior.
+  var globalHotkeyEnabled: Bool {
+    didSet {
+      UserDefaults.standard.set(globalHotkeyEnabled, forKey: Key.globalHotkeyEnabled)
+    }
+  }
+
+  /// The system-wide start/pause combination, recordable in Settings.
+  /// Persisted as its two raw components (virtual key code + Carbon
+  /// modifier flags).
+  var globalHotkey: KeyCombo {
+    didSet {
+      let defaults = UserDefaults.standard
+      defaults.set(Int(globalHotkey.keyCode), forKey: Key.globalHotkeyKeyCode)
+      defaults.set(Int(globalHotkey.carbonModifiers), forKey: Key.globalHotkeyModifiers)
+    }
+  }
+
   // MARK: - Init
 
   init() {
@@ -156,6 +179,22 @@ final class AppSettings {
     } else {
       self.notificationsEnabled = true
     }
+    if defaults.object(forKey: Key.globalHotkeyEnabled) != nil {
+      self.globalHotkeyEnabled = defaults.bool(forKey: Key.globalHotkeyEnabled)
+    } else {
+      self.globalHotkeyEnabled = false
+    }
+    if let keyCode = defaults.object(forKey: Key.globalHotkeyKeyCode) as? Int,
+      let modifiers = defaults.object(forKey: Key.globalHotkeyModifiers) as? Int {
+      // `clamping:` so a corrupted (negative) persisted value degrades to a
+      // harmless combo instead of trapping at launch.
+      self.globalHotkey = KeyCombo(
+        keyCode: UInt32(clamping: keyCode),
+        carbonModifiers: UInt32(clamping: modifiers),
+      )
+    } else {
+      self.globalHotkey = .defaultCombo
+    }
 
     // Mirror back to defaults so persisted values are always consistent with
     // the (possibly clamped) in-memory defaults set above.
@@ -169,6 +208,9 @@ final class AppSettings {
     defaults.set(tickEnabled, forKey: Key.tickEnabled)
     defaults.set(hideMenuBarTime, forKey: Key.hideMenuBarTime)
     defaults.set(notificationsEnabled, forKey: Key.notificationsEnabled)
+    defaults.set(globalHotkeyEnabled, forKey: Key.globalHotkeyEnabled)
+    defaults.set(Int(globalHotkey.keyCode), forKey: Key.globalHotkeyKeyCode)
+    defaults.set(Int(globalHotkey.carbonModifiers), forKey: Key.globalHotkeyModifiers)
   }
 
   // MARK: - Phase Duration

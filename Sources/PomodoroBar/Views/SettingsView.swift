@@ -49,16 +49,23 @@ private struct GeneralTab: View {
   /// inline — a toggle that silently snaps back looks broken.
   @State private var loginItemError: String?
 
+  /// Ko-fi page for the Support row. The Ko-fi widget embed is web-only, so
+  /// the native equivalent is a button that opens this page in the default
+  /// browser. The ID matches the widget embed (`Y8Y01QFKCC`).
+  private static let kofiURL = URL(string: "https://ko-fi.com/Y8Y01QFKCC")!
+
   var body: some View {
     @Bindable var settings = settings
 
     Form {
       startupSection
       menuBarSection(settings: settings)
+      keyboardSection(settings: settings)
       durationsSection(settings: settings)
       cycleSection(settings: settings)
       automationSection(settings: settings)
       soundSection(settings: settings)
+      supportSection
     }
     .formStyle(.grouped)
     .onAppear {
@@ -158,6 +165,38 @@ private struct GeneralTab: View {
     }
   }
 
+  @ViewBuilder
+  private func keyboardSection(settings: AppSettings) -> some View {
+    @Bindable var settings = settings
+    Section {
+      Toggle(isOn: $settings.globalHotkeyEnabled) {
+        settingLabel(
+          "Start / pause from anywhere",
+          systemImage: "keyboard",
+          tint: Theme.tomatoOrange,
+        )
+      }
+      .onChange(of: settings.globalHotkeyEnabled) { _, enabled in
+        HotkeyCenter.shared.setEnabled(enabled)
+      }
+
+      LabeledContent {
+        HotkeyRecorderField(combo: $settings.globalHotkey)
+      } label: {
+        settingLabel("Shortcut", systemImage: "command", tint: Theme.vineGreen)
+      }
+      .disabled(!settings.globalHotkeyEnabled)
+    } header: {
+      Text("Keyboard")
+    } footer: {
+      let shortcut = settings.globalHotkey.displayString
+      Text(
+        "When on, \(shortcut) toggles the timer system-wide, even while "
+        + "another app is active. Click the shortcut to record a different one."
+      )
+    }
+  }
+
   // MARK: - Sections
 
   @ViewBuilder
@@ -252,6 +291,36 @@ private struct GeneralTab: View {
       Text(
         "A notification makes the end of a session visible even when another "
         + "app is full-screen. Sounds play for phase changes and focus ticks."
+      )
+    }
+  }
+
+  // MARK: - Support section
+
+  /// Renders the official Ko-fi "Support me on Ko-fi" badge as a clickable
+  /// link. The badge is bundled as an image set (Resources/Assets.xcassets/
+  /// KoFiBadge.imageset), so the app never fetches it from the network and
+  /// the row works offline. The whole row is tappable, matching the visual
+  /// weight of the official button.
+  private var supportSection: some View {
+    Section {
+      Link(destination: Self.kofiURL) {
+        HStack {
+          Image("KoFiBadge")
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .frame(height: 36)
+            .accessibilityLabel("Support me on Ko-fi (opens in your browser)")
+          Spacer()
+        }
+      }
+      .buttonStyle(.plain)
+    } header: {
+      Text("Support")
+    } footer: {
+      Text(
+        "If PomodoroBar helps you focus, you can buy me a coffee on Ko-fi. "
+        + "Totally optional, and it opens Ko-fi in your browser."
       )
     }
   }
