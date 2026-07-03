@@ -5,7 +5,7 @@
 	<key>CFBundleName</key>
 	<string>PomodoroBar</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.pomodorobar.app</string>
+	<string>com.archiet4.pomodorobar</string>
 	<key>CFBundleExecutable</key>
 	<string>PomodoroBar</string>
 	<key>CFBundleIconFile</key>

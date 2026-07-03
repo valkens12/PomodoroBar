@@ -11,7 +11,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 APP_NAME="PomodoroBar"
-BUNDLE_ID="com.pomodorobar.app"
+BUNDLE_ID="com.archiet4.pomodorobar"
 BUILD_DIR="${PROJECT_ROOT}/build"
 APP_DIR="${BUILD_DIR}/${APP_NAME}.app"
 CONTENTS_DIR="${APP_DIR}/Contents"
