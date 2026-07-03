@@ -114,11 +114,34 @@ struct MenuContentView: View {
     }
   }
 
-  /// Banner shown when the timer is running but no focus app is frontmost.
-  /// The timer holds (does not decrement) in this state. Offers a one-click
-  /// jump back into the first focus app so the banner isn't a dead end.
+  /// Banner shown when the timer is running but the countdown is held —
+  /// either the frontmost app isn't a focus app at all (`.wrongApp`), or
+  /// Safari is frontmost with focus-domains configured and the current tab
+  /// doesn't match one of them (`.wrongTab`). The timer never decrements in
+  /// either state.
   private var waitingBanner: some View {
     VStack(spacing: 4) {
+      switch timer.focusWaitReason {
+      case .notWaiting:
+        EmptyView()
+      case .wrongApp:
+        wrongAppBannerContent
+      case .wrongTab:
+        wrongTabBannerContent
+      }
+    }
+    .padding(.horizontal, 10)
+    .padding(.vertical, 6)
+    .background(
+      Theme.vineGreen.opacity(0.12),
+      in: RoundedRectangle(cornerRadius: 10, style: .continuous),
+    )
+  }
+
+  /// Content for `.wrongApp`: offers a one-click jump back into the first
+  /// focus app so the banner isn't a dead end.
+  private var wrongAppBannerContent: some View {
+    Group {
       HStack(spacing: 6) {
         Image(systemName: "leaf.fill")
           .font(Typography.bannerIcon)
@@ -131,19 +154,8 @@ struct MenuContentView: View {
       .accessibilityElement(children: .combine)
       .accessibilityLabel("Timer paused, waiting for a focus app to become active")
 
-      if focusGuard.frontmostBundleId != nil,
-        !focusGuard.isFocusAppActive {
-        HStack(spacing: 4) {
-          Text("Current:")
-            .font(Typography.bannerDetail)
-            .foregroundStyle(.secondary)
-          Text(focusGuard.frontmostAppName ?? focusGuard.frontmostBundleId ?? "")
-            .font(Typography.bannerDetail)
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
-            .truncationMode(.middle)
-          Spacer()
-        }
+      if let frontmostName = focusGuard.frontmostAppName ?? focusGuard.frontmostBundleId {
+        bannerDetailRow(label: "Current:", value: frontmostName)
       }
 
       if let firstApp = focusGuard.focusApps.first {
@@ -162,12 +174,52 @@ struct MenuContentView: View {
         }
       }
     }
-    .padding(.horizontal, 10)
-    .padding(.vertical, 6)
-    .background(
-      Theme.vineGreen.opacity(0.12),
-      in: RoundedRectangle(cornerRadius: 10, style: .continuous),
-    )
+  }
+
+  /// Content for `.wrongTab`: Safari is already frontmost, so there's
+  /// nothing to "open" — instead show which site is active and which sites
+  /// would count.
+  private var wrongTabBannerContent: some View {
+    Group {
+      HStack(spacing: 6) {
+        Image(systemName: "safari")
+          .font(Typography.bannerIcon)
+          .foregroundStyle(Theme.vineGreen)
+        Text("Paused — wrong tab")
+          .font(Typography.bannerTitle)
+          .foregroundStyle(Theme.textColor(for: .longBreak))
+        Spacer()
+      }
+      .accessibilityElement(children: .combine)
+      .accessibilityLabel("Timer paused, current Safari tab isn't a focus website")
+
+      if let host = focusGuard.frontmostTabHost {
+        bannerDetailRow(label: "Current:", value: host)
+      }
+
+      if let allowedDomains = safariFocusDomains, !allowedDomains.isEmpty {
+        bannerDetailRow(label: "Allowed:", value: allowedDomains.joined(separator: ", "))
+      }
+    }
+  }
+
+  private var safariFocusDomains: [String]? {
+    focusGuard.focusApps.first { $0.bundleId == WellKnownBundleId.safari }?.focusDomains
+  }
+
+  /// Shared "Label: value" line used by both banner variants.
+  private func bannerDetailRow(label: String, value: String) -> some View {
+    HStack(spacing: 4) {
+      Text(label)
+        .font(Typography.bannerDetail)
+        .foregroundStyle(.secondary)
+      Text(value)
+        .font(Typography.bannerDetail)
+        .foregroundStyle(.secondary)
+        .lineLimit(1)
+        .truncationMode(.middle)
+      Spacer()
+    }
   }
 
   private var sessionDots: some View {

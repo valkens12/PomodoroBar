@@ -28,5 +28,7 @@
 	<string>public.app-category.productivity</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>PomodoroBar can check Safari's current tab to only count down while you're on your chosen focus websites.</string>
 </dict>
 </plist>

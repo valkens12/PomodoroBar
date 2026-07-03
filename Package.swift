@@ -11,5 +11,10 @@ let package = Package(
       name: "PomodoroBar",
       path: "Sources/PomodoroBar"
     ),
+    .testTarget(
+      name: "PomodoroBarTests",
+      dependencies: ["PomodoroBar"],
+      path: "Tests/PomodoroBarTests"
+    ),
   ]
 )

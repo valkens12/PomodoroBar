@@ -6,7 +6,9 @@ import UniformTypeIdentifiers
 ///
 /// When "Focus Mode" is on, the timer only counts down while one of the listed
 /// apps is frontmost. Apps are added via a file importer limited to `.app`
-/// bundles; their icons are resolved through NSWorkspace.
+/// bundles; their icons are resolved through NSWorkspace. The Safari entry
+/// additionally supports restricting to specific websites (see
+/// `SafariDomainsSection`), checked via Apple Events.
 struct FocusAppsTab: View {
   @Environment(FocusGuard.self) private var focusGuard
 
@@ -47,6 +49,9 @@ struct FocusAppsTab: View {
             FocusAppRow(app: app, icon: { appIcon(for: app) }) {
               focusGuard.remove(app)
             }
+            if app.bundleId == WellKnownBundleId.safari {
+              SafariDomainsSection(app: app)
+            }
           }
         }
 
@@ -54,7 +59,10 @@ struct FocusAppsTab: View {
       } header: {
         Text("Focus Apps")
       } footer: {
-        Text("Add the apps you want to work in.")
+        Text(
+          "Add the apps you want to work in. For Safari, optionally restrict "
+          + "to specific websites — leave empty to allow the whole app."
+        )
       }
     }
     .formStyle(.grouped)
@@ -184,6 +192,162 @@ private struct FocusAppRow<Icon: View>: View {
       .opacity(isHovering ? 1 : 0)
       .help("Remove \(app.name) from the focus list")
       .accessibilityLabel("Remove \(app.name)")
+    }
+    .contentShape(Rectangle())
+    .onHover { hovering in
+      withAnimation(.easeOut(duration: 0.12)) {
+        isHovering = hovering
+      }
+    }
+  }
+}
+
+// MARK: - SafariDomainsSection
+
+/// Sub-rows under the Safari entry for restricting focus credit to specific
+/// websites. Shown only for `WellKnownBundleId.safari`, since domains are
+/// meaningless for every other app. An empty `app.focusDomains` list leaves
+/// Safari gated at the app level only — identical to today's behavior.
+private struct SafariDomainsSection: View {
+  let app: FocusApp
+  @Environment(FocusGuard.self) private var focusGuard
+
+  @State private var newDomain = ""
+  @State private var isCapturing = false
+  @State private var showPrimerAlert = false
+
+  /// Shown once, ever, before the first Apple Event is sent to Safari — per
+  /// HIG guidance to explain before triggering a system permission dialog.
+  @AppStorage("hasShownSafariAutomationPrimer") private var hasShownPrimer = false
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 6) {
+      Text("Restrict to specific websites")
+        .font(.system(.caption, design: .rounded).weight(.medium))
+        .foregroundStyle(.secondary)
+
+      ForEach(app.focusDomains, id: \.self) { domain in
+        DomainRow(domain: domain) {
+          focusGuard.removeDomain(domain, from: app)
+        }
+      }
+
+      HStack(spacing: 8) {
+        TextField("example.com", text: $newDomain)
+          .textFieldStyle(.roundedBorder)
+          .font(.system(.body, design: .rounded))
+          .onSubmit(addTypedDomain)
+        Button("Add", action: addTypedDomain)
+          .disabled(newDomain.trimmingCharacters(in: .whitespaces).isEmpty)
+      }
+
+      captureButton
+
+      if focusGuard.automationPermissionDenied {
+        deniedPermissionNotice
+      }
+    }
+    .padding(.leading, 36)
+    .padding(.vertical, 4)
+  }
+
+  private var captureButton: some View {
+    Button {
+      if hasShownPrimer {
+        captureCurrentTab()
+      } else {
+        showPrimerAlert = true
+      }
+    } label: {
+      if isCapturing {
+        ProgressView()
+          .controlSize(.small)
+      } else {
+        Label("Add Current Tab's Domain", systemImage: "safari")
+      }
+    }
+    .buttonStyle(.borderless)
+    .foregroundStyle(Theme.tomatoRed)
+    .disabled(isCapturing || !SafariTabQuery.isSupported)
+    .accessibilityHint("Adds the domain of the tab currently open in Safari.")
+    .alert("Allow Safari Tab Access?", isPresented: $showPrimerAlert) {
+      Button("Continue") {
+        hasShownPrimer = true
+        captureCurrentTab()
+      }
+      Button("Cancel", role: .cancel) {}
+    } message: {
+      Text(
+        "PomodoroBar needs permission to check Safari's current tab. "
+        + "You'll see a system prompt next — click OK to allow it."
+      )
+    }
+  }
+
+  private var deniedPermissionNotice: some View {
+    HStack(spacing: 4) {
+      Image(systemName: "exclamationmark.triangle.fill")
+        .foregroundStyle(.orange)
+      Text("Automation access denied.")
+        .foregroundStyle(.secondary)
+      Button("Open Settings…", action: openAutomationSettings)
+        .buttonStyle(.link)
+    }
+    .font(.system(.caption, design: .rounded))
+  }
+
+  private func addTypedDomain() {
+    let trimmed = newDomain.trimmingCharacters(in: .whitespaces)
+    guard !trimmed.isEmpty else { return }
+    focusGuard.addDomain(trimmed, to: app)
+    newDomain = ""
+  }
+
+  private func captureCurrentTab() {
+    isCapturing = true
+    Task {
+      let host = await focusGuard.captureCurrentSafariTabHost()
+      isCapturing = false
+      if let host {
+        focusGuard.addDomain(host, to: app)
+      }
+    }
+  }
+
+  private func openAutomationSettings() {
+    guard
+      let url = URL(
+        string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation"
+      )
+    else { return }
+    NSWorkspace.shared.open(url)
+  }
+}
+
+/// A single focus-domain row, matching `FocusAppRow`'s hover-reveal remove
+/// pattern.
+private struct DomainRow: View {
+  let domain: String
+  let onRemove: () -> Void
+
+  @State private var isHovering = false
+
+  var body: some View {
+    HStack(spacing: 6) {
+      Image(systemName: "globe")
+        .foregroundStyle(.secondary)
+        .font(.system(size: 11))
+      Text(domain)
+        .font(.system(.callout, design: .rounded))
+      Spacer()
+      Button(role: .destructive, action: onRemove) {
+        Image(systemName: "minus.circle.fill")
+          .foregroundStyle(.red)
+      }
+      .buttonStyle(.borderless)
+      .opacity(isHovering ? 1 : 0)
+      .help("Remove \(domain)")
+      .accessibilityLabel("Remove \(domain)")
     }
     .contentShape(Rectangle())
     .onHover { hovering in
