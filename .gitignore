@@ -13,3 +13,10 @@ PomodoroBar.xcodeproj/project.xcworkspace/xcuserdata/
 # macOS
 .DS_Store
 *.swp
+
+# Local-only docs (App Store copy + privacy policy are kept out of the repo)
+AppStoreCopy.md
+PRIVACY_POLICY.md
+
+# Local screenshots / marketing assets
+Screenshots/
