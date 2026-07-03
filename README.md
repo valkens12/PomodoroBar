@@ -16,7 +16,11 @@ A native macOS menu bar Pomodoro timer with a refined tomato aesthetic, built wi
 - **Session dots** showing how many focus sessions are completed before a long break.
 - **Auto-start** of breaks and/or focus sessions, configurable per preference.
 - **Sound cues** for phase changes and an optional subtle tick while running.
-- **Settings window** with three tabs — General, Focus Apps, Statistics — all persisted across relaunches via `UserDefaults`.
+- **Sleep-aware, wall-clock timer** — the countdown subtracts real elapsed time (no drift), and system sleep pauses the session instead of silently stretching it; the timer resumes on wake.
+- **Actionable notifications** — when a phase ends without auto-start, the notification carries Start/Skip buttons so the next phase is one click away, without hunting for the menu bar.
+- **Global hotkey** — optional system-wide shortcut to start/pause from any app. Default ⌃⌥P, recordable to any combination in Settings → Keyboard (function keys allowed bare; anything else needs ⌃/⌥/⌘ so it can't hijack ordinary typing).
+- **Monochrome menu bar icon** — optional template rendering so the tomato matches the built-in status items and adapts to the menu bar's appearance.
+- **Settings window** with two tabs — General, Focus Apps — all persisted across relaunches via `UserDefaults`.
 - **Liquid Glass** appearance — built against the macOS 26 SDK, so the system automatically applies the latest material styling; `.glassEffect()` is used where appropriate.
 
 ## Build & Run
