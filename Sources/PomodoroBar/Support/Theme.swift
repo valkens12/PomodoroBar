@@ -74,6 +74,24 @@ enum Theme {
     }
   }
 
+  /// Phase accent tuned for use as a *filled control background* behind
+  /// white label text (the prominent Start/Pause button). `color(for:)` is
+  /// too bright for this in the break phases — white on `leafGreen` is
+  /// roughly 2:1 — so the greens are darkened until white text clears 4.5:1
+  /// in both appearances (prominent buttons keep white text in dark mode
+  /// too, so one value per phase suffices).
+  static func buttonTint(for phase: PomodoroTimer.Phase) -> Color {
+    switch phase {
+    case .focus:
+      // White on tomatoRed already measures ~5:1.
+      return tomatoRed
+    case .shortBreak:
+      return Color(red: 0.24, green: 0.50, blue: 0.14)
+    case .longBreak:
+      return Color(red: 0.22, green: 0.46, blue: 0.30)
+    }
+  }
+
   /// Phase accent tuned for use as text: darkened in light mode and
   /// brightened in dark mode so labels reach at least 4.5:1 against the
   /// window background in both appearances.

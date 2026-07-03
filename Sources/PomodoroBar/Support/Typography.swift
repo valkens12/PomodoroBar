@@ -38,6 +38,9 @@ enum Typography {
   /// The bottom Settings…/Quit row.
   static let compactLabel = Font.system(size: 12, weight: .regular, design: .rounded)
 
-  /// The countdown shown in the menu bar status item itself.
-  static let menuBarCountdown = Font.system(size: 12, weight: .semibold, design: .rounded)
+  /// The countdown shown in the menu bar status item itself. Deliberately
+  /// *not* rounded and regular weight: it sits inches from the system clock,
+  /// and matching the clock's plain system face keeps the status bar looking
+  /// like one surface instead of advertising a third-party font choice.
+  static let menuBarCountdown = Font.system(size: 12, weight: .regular)
 }
