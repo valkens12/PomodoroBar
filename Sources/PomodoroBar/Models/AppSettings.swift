@@ -33,6 +33,7 @@ final class AppSettings {
     static let globalHotkeyEnabled = "globalHotkeyEnabled"
     static let globalHotkeyKeyCode = "globalHotkeyKeyCode"
     static let globalHotkeyModifiers = "globalHotkeyModifiers"
+    static let monochromeMenuBarIcon = "monochromeMenuBarIcon"
   }
 
   // MARK: - Stored Properties
@@ -107,6 +108,15 @@ final class AppSettings {
     }
   }
 
+  /// When true, the menu bar tomato renders as a system-style template
+  /// (monochrome) image instead of the full-color glyph, blending in with
+  /// the built-in status items.
+  var monochromeMenuBarIcon: Bool {
+    didSet {
+      UserDefaults.standard.set(monochromeMenuBarIcon, forKey: Key.monochromeMenuBarIcon)
+    }
+  }
+
   /// When true, a system-wide hotkey (`globalHotkey`) toggles start/pause
   /// without opening the popover. Off by default — grabbing a global key
   /// combination is opt-in behavior.
@@ -178,6 +188,16 @@ final class AppSettings {
       self.notificationsEnabled = defaults.bool(forKey: Key.notificationsEnabled)
     } else {
       self.notificationsEnabled = true
+    }
+    if defaults.object(forKey: Key.monochromeMenuBarIcon) != nil {
+      self.monochromeMenuBarIcon = defaults.bool(forKey: Key.monochromeMenuBarIcon)
+    } else {
+      self.monochromeMenuBarIcon = false
+    }
+    if defaults.object(forKey: Key.monochromeMenuBarIcon) != nil {
+      self.monochromeMenuBarIcon = defaults.bool(forKey: Key.monochromeMenuBarIcon)
+    } else {
+      self.monochromeMenuBarIcon = false
     }
     if defaults.object(forKey: Key.globalHotkeyEnabled) != nil {
       self.globalHotkeyEnabled = defaults.bool(forKey: Key.globalHotkeyEnabled)

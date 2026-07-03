@@ -154,6 +154,13 @@ private struct GeneralTab: View {
           tint: Theme.leafGreen,
         )
       }
+      Toggle(isOn: $settings.monochromeMenuBarIcon) {
+        settingLabel(
+          "Monochrome icon",
+          systemImage: "circle.lefthalf.filled",
+          tint: Theme.vineGreen,
+        )
+      }
     } header: {
       Text("Menu Bar")
     } footer: {

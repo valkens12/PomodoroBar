@@ -37,14 +37,14 @@ struct TimerMenuBarLabel: View {
       if showsTime {
         if settings.hideMenuBarTime {
           HStack(spacing: 3) {
-            Image(nsImage: MenuBarIcon.tomato(ripeness: ripeness))
+            tomatoImage(size: 16)
             if isDimmed {
               pauseGlyph
             }
           }
         } else {
           HStack(spacing: 4) {
-            Image(nsImage: MenuBarIcon.tomato(phase: timer.phase, size: 12))
+            tomatoImage(size: 12)
             if isDimmed {
               pauseGlyph
             }
@@ -54,11 +54,36 @@ struct TimerMenuBarLabel: View {
           }
         }
       } else {
-        Image(nsImage: MenuBarIcon.tomato(phase: nil))
+        tomatoImage(size: 16)
       }
     }
     .opacity(isDimmed ? 0.45 : 1.0)
     .accessibilityLabel(timer.accessibilityLabel)
+  }
+
+  /// The tomato at the given point size, honoring the monochrome preference.
+  /// The template variant lets macOS tint the silhouette like its own status
+  /// items; the color variant keeps the ripening/phase tinting.
+  private func tomatoImage(size: CGFloat) -> Image {
+    if settings.monochromeMenuBarIcon {
+      return Image(nsImage: MenuBarIcon.tomatoTemplate(size: size))
+    } else {
+      return Image(nsImage: colorTomato(size: size))
+    }
+  }
+
+  /// The color (non-template) tomato at the given point size. Pulled out so
+  /// `tomatoImage` has a simple two-branch body; the three call sites only
+  /// differ in which `MenuBarIcon.tomato` arguments to pass.
+  @MainActor
+  private func colorTomato(size: CGFloat) -> NSImage {
+    if showsTime, settings.hideMenuBarTime {
+      return MenuBarIcon.tomato(ripeness: ripeness, size: size)
+    } else if showsTime {
+      return MenuBarIcon.tomato(phase: timer.phase, size: size)
+    } else {
+      return MenuBarIcon.tomato(phase: nil, size: size)
+    }
   }
 
   /// Explicit pause indicator alongside the dimming, so a suspended countdown
