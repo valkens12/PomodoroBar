@@ -25,7 +25,17 @@ targets:
     sources:
       - path: Sources/PomodoroBar
       - path: Resources/Assets.xcassets
-      - path: Resources/de.lproj
+      # Point at the parent Resources/ directory so XcodeGen discovers the
+      # *.lproj subdirectories and (a) adds each region to `knownRegions`
+      # and (b) creates PBXVariantGroup entries for the .strings files in the
+      # Resources build phase. Pointing directly at a single `de.lproj` only
+      # registers a plain folder reference that never ships in the bundle,
+      # which is why the German strings were missing from the Xcode build.
+      - path: Resources
+        excludes:
+          - "Assets.xcassets"
+          - "Info.plist"
+          - "AppIcon.icns"
     settings:
       base:
         GENERATE_INFOPLIST_FILE: NO
