@@ -15,6 +15,7 @@ struct MenuContentView: View {
   @Environment(AppSettings.self) private var settings
   @Environment(FocusGuard.self) private var focusGuard
   @Environment(StatisticsStore.self) private var statistics
+  @Environment(\.openWindow) private var openWindow
 
   private let popoverWidth: CGFloat = 270
   private let ringSize: CGFloat = 170
@@ -22,6 +23,11 @@ struct MenuContentView: View {
   /// True for a brief moment right after a focus session completes, driving
   /// a scale + glow pulse on the ring and a bump on the just-filled dot.
   @State private var celebrationPulse = false
+
+  /// Gates Skip behind a confirmation while a focus session is in flight —
+  /// skipping discards the session unrecorded, so a single stray click
+  /// shouldn't be able to do it.
+  @State private var showSkipConfirmation = false
 
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -62,9 +68,11 @@ struct MenuContentView: View {
       Image(systemName: timer.phase.systemImage)
         .font(Typography.phaseIcon)
         .foregroundStyle(Theme.color(for: timer.phase))
+        .contentTransition(.symbolEffect(.replace))
       Text(timer.phase.label)
         .font(Typography.phaseTitle)
         .foregroundStyle(Theme.textColor(for: timer.phase))
+        .contentTransition(.opacity)
       Spacer()
     }
     .animation(.easeInOut(duration: 0.35), value: timer.phase)
@@ -85,10 +93,17 @@ struct MenuContentView: View {
           .font(Typography.countdownDisplay)
           .monospacedDigit()
           .foregroundStyle(.primary)
+          // Digits roll over instead of snapping. `numericText` is a
+          // content transition, so Reduce Motion is skipped explicitly like
+          // every other flourish in this view.
+          .contentTransition(reduceMotion ? .identity : .numericText(countsDown: true))
+          .animation(.linear(duration: 0.2), value: timer.remainingSeconds)
         Text(runStateLabel)
           .font(Typography.stateCaption)
           .foregroundStyle(.secondary)
           .textCase(.uppercase)
+          .contentTransition(.opacity)
+          .animation(.easeInOut(duration: 0.2), value: runStateLabel)
       }
     }
     .frame(width: ringSize, height: ringSize)
@@ -242,19 +257,31 @@ struct MenuContentView: View {
     )
   }
 
-  /// One-line glance at today's progress, surfacing the statistics that
-  /// otherwise live three clicks away in Settings.
+  /// One-line glance at today's progress, doubling as a shortcut into the
+  /// Statistics window.
   private var todaySummary: some View {
-    Text(
-      "Today: \(statistics.todayMinutes)m · \(statistics.todaySessions) "
-      + (statistics.todaySessions == 1 ? "session" : "sessions")
-    )
-    .font(Typography.stateCaption)
-    .foregroundStyle(.secondary)
+    Button {
+      openWindow(id: WindowId.statistics)
+    } label: {
+      HStack(spacing: 3) {
+        Text(
+          "Today: \(statistics.todayMinutes)m · \(statistics.todaySessions) "
+          + (statistics.todaySessions == 1 ? "session" : "sessions")
+        )
+        Image(systemName: "chevron.right")
+          .font(.system(size: 8, weight: .semibold))
+          .foregroundStyle(.tertiary)
+      }
+      .font(Typography.stateCaption)
+      .foregroundStyle(.secondary)
+    }
+    .buttonStyle(.plain)
+    .help("Show your focus history")
     .accessibilityLabel(
       "Today: \(statistics.todayMinutes) focus minutes, "
       + "\(statistics.todaySessions) sessions"
     )
+    .accessibilityHint("Opens the statistics window.")
   }
 
   private var primaryControls: some View {
@@ -272,7 +299,9 @@ struct MenuContentView: View {
       .frame(maxWidth: .infinity)
     }
     .buttonStyle(.borderedProminent)
-    .tint(Theme.color(for: timer.phase))
+    // buttonTint, not color(for:): the prominent style draws white label
+    // text, and the raw break greens don't give white text 4.5:1 contrast.
+    .tint(Theme.buttonTint(for: timer.phase))
     .controlSize(.large)
     .keyboardShortcut(.space, modifiers: [])
     .help("\(primaryButtonTitle) the timer (Space)")
@@ -285,6 +314,13 @@ struct MenuContentView: View {
   /// meaningful even while idle.
   private var isResetNoOp: Bool {
     timer.runState == .idle && timer.remainingSeconds == timer.totalSeconds
+  }
+
+  /// True when skipping right now would throw away a focus session that has
+  /// made progress — that deserves a confirmation; skipping an untouched
+  /// phase or a break stays one click.
+  private var skipDiscardsFocusProgress: Bool {
+    timer.phase == .focus && timer.remainingSeconds < timer.totalSeconds
   }
 
   private var secondaryControls: some View {
@@ -302,30 +338,56 @@ struct MenuContentView: View {
       .accessibilityLabel("Reset timer")
 
       Button {
-        timer.skip()
+        if skipDiscardsFocusProgress {
+          showSkipConfirmation = true
+        } else {
+          timer.skip()
+        }
       } label: {
         Label("Skip", systemImage: "forward.fill")
           .frame(maxWidth: .infinity)
       }
       .buttonStyle(.bordered)
-      .keyboardShortcut("s")
-      .help("Skip ahead to the next phase (⌘S)")
+      .keyboardShortcut(.rightArrow, modifiers: .command)
+      .help("Skip ahead to the next phase (⌘→)")
       .accessibilityLabel("Skip to next phase")
+      .confirmationDialog(
+        "Skip this focus session?",
+        isPresented: $showSkipConfirmation,
+      ) {
+        Button("Skip Session", role: .destructive) {
+          timer.skip()
+        }
+        Button("Cancel", role: .cancel) {}
+      } message: {
+        Text("Skipped sessions aren't recorded in your statistics.")
+      }
     }
   }
 
   /// Bottom row uses `SettingsLink` — the documented, reliable way to open
   /// the Settings scene from a `MenuBarExtra` popover in an accessory
   /// (LSUIElement) app. `@Environment(\.openSettings)` is unreliable here.
+  /// All three entries are plain text, menu-item style, so no one action
+  /// looks more decorated than its neighbors.
   private var bottomRow: some View {
     HStack {
       SettingsLink {
-        Label("Settings…", systemImage: "gearshape")
+        Text("Settings…")
       }
       .buttonStyle(.borderless)
       .keyboardShortcut(",")
       .help("Open PomodoroBar settings (⌘,)")
       .accessibilityLabel("Open settings")
+
+      Spacer()
+
+      Button("Statistics…") {
+        openWindow(id: WindowId.statistics)
+      }
+      .buttonStyle(.borderless)
+      .help("Show your focus history")
+      .accessibilityLabel("Open statistics")
 
       Spacer()
 

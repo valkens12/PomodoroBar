@@ -29,7 +29,11 @@ private func accessibleFocusDuration(_ minutes: Int) -> String {
 /// Focus-history statistics: today / week / month summaries, a 7-day bar chart,
 /// and a 30-day area trend. All marks are tomato-tinted to keep the aesthetic
 /// cohesive. A friendly empty state is shown when no sessions have been recorded.
-struct StatisticsTab: View {
+///
+/// Shown in its own "Statistics" window (opened from the popover) rather
+/// than a Settings tab — history is content, not configuration, and macOS
+/// Settings windows are for preferences.
+struct StatisticsView: View {
   @Environment(StatisticsStore.self) private var statistics
 
   /// Hovered/tapped day on each chart, used to drive a crosshair + value
@@ -317,6 +321,6 @@ private struct StatCard: View {
 }
 
 #Preview {
-  StatisticsTab()
+  StatisticsView()
     .environment(StatisticsStore())
 }
