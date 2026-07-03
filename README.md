@@ -4,6 +4,26 @@
 
 Built with SwiftUI on the macOS 26 SDK with the Liquid Glass look. Single-target SwiftPM executable, zero third-party dependencies.
 
+## Install
+
+The easiest way is via Homebrew:
+
+```sh
+brew tap valkens12/tap
+brew trust valkens12/tap
+brew install --cask pomodorobar
+```
+
+`brew trust` is required once per tap on Homebrew 6+ (taps must be explicitly trusted before their casks load). To upgrade later: `brew update && brew upgrade --cask pomodorobar`.
+
+The app is ad-hoc signed and **not** notarized, so on first launch macOS Gatekeeper may block it. If it does, run:
+
+```sh
+xattr -cr /Applications/PomodoroBar.app
+```
+
+…or right-click the app in `/Applications` → *Open* → *Open Anyway*. This is a one-time step.
+
 ## Features
 
 - **Menu bar only** — runs entirely in the status bar (`LSUIElement`), no Dock icon.

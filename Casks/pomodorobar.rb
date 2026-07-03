@@ -6,6 +6,7 @@
 # rendered cask into your tap repo (e.g. valkens12/homebrew-tap) so users can:
 #
 #   brew tap valkens12/tap
+#   brew trust valkens12/tap
 #   brew install --cask pomodorobar
 #
 # The app is ad-hoc signed and NOT notarized, so first launch needs a one-time
@@ -19,7 +20,7 @@ cask "pomodorobar" do
   name "PomodoroBar"
   desc "Quiet Pomodoro timer that lives in the menu bar"
   homepage "https://github.com/valkens12/PomodoroBar"
-  depends_on macos: ">= :26"
+  depends_on macos: :tahoe
 
   app "PomodoroBar.app"
 
