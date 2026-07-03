@@ -1,0 +1,70 @@
+name: release
+
+# Builds PomodoroBar.app on every published version tag (v1.2.3), zips it,
+# renders the Homebrew Cask with the real version + sha256, and publishes a
+# GitHub Release with both assets attached. The app is ad-hoc signed only
+# (not notarized) -- see Casks/pomodorobar.rb caveats for the Gatekeeper
+# bypass users run once on first launch.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    # macOS 26 SDK is required (the app targets deployment .v26). If GitHub
+    # hasn't rolled out a macos-26 runner yet, switch to macos-15 and add a
+    # maxim-lobanov/setup-xcode@v1 step with xcode-version: '26'.
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version from tag
+        id: ver
+        run: |
+          # "v1.2.3" -> "1.2.3"
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and package .app
+        run: |
+          swift build -c release
+          ./Scripts/package.sh
+          test -d build/PomodoroBar.app
+
+      - name: Zip the .app and compute sha256
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          # ditto preserves resource forks / extended attributes / symlinks
+          # that `zip` would drop -- required for a healthy .app bundle.
+          ditto -c -k --keepParent build/PomodoroBar.app "PomodoroBar-${VERSION}.zip"
+          shasum -a 256 "PomodoroBar-${VERSION}.zip" | awk '{print $1}' > sha256.txt
+          echo "sha256=$(cat sha256.txt)"
+
+      - name: Render Cask with version and sha256
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          SHA=$(cat sha256.txt)
+          sed -e "s/__VERSION__/${VERSION}/g" \
+              -e "s/__SHA256__/${SHA}/g" \
+              Casks/pomodorobar.rb > pomodorobar.rb
+          echo "::group::Rendered Cask"
+          cat pomodorobar.rb
+          echo "::endgroup::"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            "PomodoroBar-${VERSION}.zip" \
+            "pomodorobar.rb" \
+            --title "PomodoroBar ${VERSION}" \
+            --generate-notes
