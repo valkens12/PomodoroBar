@@ -244,6 +244,36 @@ private struct GeneralTab: View {
     }
   }
 
+  // MARK: - Support section
+
+  /// Renders the official Ko-fi "Support me on Ko-fi" badge as a clickable
+  /// link. The badge is bundled as an image set (Resources/Assets.xcassets/
+  /// KoFiBadge.imageset), so the app never fetches it from the network and
+  /// the row works offline. The whole row is tappable, matching the visual
+  /// weight of the official button.
+  private var supportSection: some View {
+    Section {
+      Link(destination: Self.kofiURL) {
+        HStack {
+          Image("KoFiBadge")
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .frame(height: 36)
+            .accessibilityLabel("Support me on Ko-fi (opens in your browser)")
+          Spacer()
+        }
+      }
+      .buttonStyle(.plain)
+    } header: {
+      Text("Support")
+    } footer: {
+      Text(
+        "If PomodoroBar helps you focus, you can buy me a coffee on Ko-fi. "
+        + "Totally optional, and it opens Ko-fi in your browser."
+      )
+    }
+  }
+
   // MARK: - Helpers
 
   /// A form label with neutral text and a tinted SF Symbol — the tomato
