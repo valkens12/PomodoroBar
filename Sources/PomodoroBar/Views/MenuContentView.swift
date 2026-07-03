@@ -77,7 +77,13 @@ struct MenuContentView: View {
     }
     .animation(.easeInOut(duration: 0.35), value: timer.phase)
     .accessibilityElement(children: .combine)
-    .accessibilityLabel("Current phase: \(timer.phase.label)")
+    .accessibilityLabel(
+      String(
+        format: String(localized: "phaseHeader.a11y", defaultValue: "Current phase: %@"),
+        locale: .current,
+        timer.phase.label,
+      )
+    )
   }
 
   private var ringWithTime: some View {
@@ -115,7 +121,13 @@ struct MenuContentView: View {
     .animation(.spring(response: 0.35, dampingFraction: 0.45), value: celebrationPulse)
     .accessibilityElement(children: .combine)
     .accessibilityLabel(
-      "\(timer.phase.label), \(timer.formattedRemaining) remaining, \(runStateLabel)"
+      String(
+        format: String(
+          localized: "phaseHeader.combined", defaultValue: "%1$@, %2$@ remaining, %3$@"
+        ),
+        locale: .current,
+        timer.phase.label, timer.formattedRemaining, runStateLabel,
+      )
     )
     .onChange(of: timer.focusCompletionTick) {
       // The pulse is purely celebratory — skip it entirely under Reduce
@@ -161,16 +173,24 @@ struct MenuContentView: View {
         Image(systemName: "leaf.fill")
           .font(Typography.bannerIcon)
           .foregroundStyle(Theme.vineGreen)
-        Text("Paused — open a focus app")
+        Text(String(localized: "banner.wrongApp", defaultValue: "Paused — open a focus app"))
           .font(Typography.bannerTitle)
           .foregroundStyle(Theme.textColor(for: .longBreak))
         Spacer()
       }
       .accessibilityElement(children: .combine)
-      .accessibilityLabel("Timer paused, waiting for a focus app to become active")
+      .accessibilityLabel(
+        String(localized: "banner.wrongApp.a11y",
+               defaultValue: "Timer paused, waiting for a focus app to become active")
+      )
 
       if let frontmostName = focusGuard.frontmostAppName ?? focusGuard.frontmostBundleId {
-        bannerDetailRow(label: "Current:", value: frontmostName)
+        bannerDetailRow(
+          label: String(
+            localized: "banner.detailCurrent", defaultValue: "Current:"
+          ),
+          value: frontmostName,
+        )
       }
 
       if let firstApp = focusGuard.focusApps.first {
@@ -178,13 +198,33 @@ struct MenuContentView: View {
           Button {
             focusGuard.openFirstFocusApp()
           } label: {
-            Label("Open \(firstApp.name)", systemImage: "arrow.up.forward.app")
-              .font(Typography.bannerDetail)
+            Label(
+              String(
+                format: String(localized: "banner.openAppPrefix", defaultValue: "Open %@"),
+                firstApp.name,
+              ),
+              systemImage: "arrow.up.forward.app",
+            )
+            .font(Typography.bannerDetail)
           }
           .buttonStyle(.borderless)
           .tint(Theme.textColor(for: .longBreak))
-          .help("Bring \(firstApp.name) to the front so the timer resumes")
-          .accessibilityLabel("Open \(firstApp.name)")
+          .help(
+            String(
+              format: String(
+                localized: "banner.bringApp", defaultValue: "Bring %@ to the front so the timer resumes"
+              ),
+              firstApp.name,
+            )
+          )
+          .accessibilityLabel(
+            String(
+              format: String(
+                localized: "banner.openAppPrefix", defaultValue: "Open %@"
+              ),
+              firstApp.name,
+            )
+          )
           Spacer()
         }
       }
@@ -200,20 +240,35 @@ struct MenuContentView: View {
         Image(systemName: "safari")
           .font(Typography.bannerIcon)
           .foregroundStyle(Theme.vineGreen)
-        Text("Paused — wrong tab")
+        Text(String(localized: "banner.wrongTab", defaultValue: "Paused — wrong tab"))
           .font(Typography.bannerTitle)
           .foregroundStyle(Theme.textColor(for: .longBreak))
         Spacer()
       }
       .accessibilityElement(children: .combine)
-      .accessibilityLabel("Timer paused, current Safari tab isn't a focus website")
+      .accessibilityLabel(
+        String(
+          localized: "banner.wrongTab.a11y",
+          defaultValue: "Timer paused, current Safari tab isn't a focus website",
+        )
+      )
 
       if let host = focusGuard.frontmostTabHost {
-        bannerDetailRow(label: "Current:", value: host)
+        bannerDetailRow(
+          label: String(
+            localized: "banner.detailCurrent", defaultValue: "Current:"
+          ),
+          value: host,
+        )
       }
 
       if let allowedDomains = safariFocusDomains, !allowedDomains.isEmpty {
-        bannerDetailRow(label: "Allowed:", value: allowedDomains.joined(separator: ", "))
+        bannerDetailRow(
+          label: String(
+            localized: "banner.detailAllowed", defaultValue: "Allowed:"
+          ),
+          value: allowedDomains.joined(separator: ", "),
+        )
       }
     }
   }
@@ -252,8 +307,14 @@ struct MenuContentView: View {
     .animation(.spring(response: 0.4, dampingFraction: 0.6), value: timer.completedFocusSessions)
     .accessibilityElement(children: .combine)
     .accessibilityLabel(
-      "Progress: \(timer.completedFocusSessions) of " +
-      "\(settings.sessionsBeforeLongBreak) focus sessions completed"
+      String(
+        format: String(
+          localized: "dots.a11y",
+          defaultValue: "Progress: %1$lld of %2$lld focus sessions completed"
+        ),
+        locale: .current,
+        timer.completedFocusSessions, settings.sessionsBeforeLongBreak,
+      )
     )
   }
 
@@ -264,9 +325,22 @@ struct MenuContentView: View {
       openWindow(id: WindowId.statistics)
     } label: {
       HStack(spacing: 3) {
+        let unit = String(
+          localized: statistics.todaySessions == 1 ? "unit.session" : "unit.sessions",
+          defaultValue: statistics.todaySessions == 1 ? "session" : "sessions",
+        )
         Text(
-          "Today: \(statistics.todayMinutes)m · \(statistics.todaySessions) "
-          + (statistics.todaySessions == 1 ? "session" : "sessions")
+          String(
+            format: String(
+              localized: statistics.todaySessions == 1
+                ? "todaySummary.singular" : "todaySummary.plural",
+              defaultValue: statistics.todaySessions == 1
+                ? "Today: %1$lldm · %2$@ session"
+                : "Today: %1$lldm · %2$@ sessions"
+            ),
+            locale: .current,
+            statistics.todayMinutes, unit,
+          )
         )
         Image(systemName: "chevron.right")
           .font(.system(size: 8, weight: .semibold))
@@ -276,12 +350,20 @@ struct MenuContentView: View {
       .foregroundStyle(.secondary)
     }
     .buttonStyle(.plain)
-    .help("Show your focus history")
+    .help(String(localized: "todaySummary.help", defaultValue: "Show your focus history"))
     .accessibilityLabel(
-      "Today: \(statistics.todayMinutes) focus minutes, "
-      + "\(statistics.todaySessions) sessions"
+      String(
+        format: String(
+          localized: "todaySummary.a11y",
+          defaultValue: "Today: %1$lld focus minutes, %2$lld sessions"
+        ),
+        locale: .current,
+        statistics.todayMinutes, statistics.todaySessions,
+      )
     )
-    .accessibilityHint("Opens the statistics window.")
+    .accessibilityHint(
+      String(localized: "todaySummary.hint", defaultValue: "Opens the statistics window.")
+    )
   }
 
   private var primaryControls: some View {
@@ -304,7 +386,14 @@ struct MenuContentView: View {
     .tint(Theme.buttonTint(for: timer.phase))
     .controlSize(.large)
     .keyboardShortcut(.space, modifiers: [])
-    .help("\(primaryButtonTitle) the timer (Space)")
+    .help(
+      String(
+        format: String(
+          localized: "control.primary.help", defaultValue: "%@ the timer (Space)"
+        ),
+        primaryButtonTitle,
+      )
+    )
     .animation(.spring(response: 0.3, dampingFraction: 0.7), value: timer.runState)
     .accessibilityLabel(primaryButtonTitle)
   }
@@ -328,14 +417,21 @@ struct MenuContentView: View {
       Button {
         timer.reset()
       } label: {
-        Label("Reset", systemImage: "arrow.counterclockwise")
-          .frame(maxWidth: .infinity)
+        Label(
+          String(localized: "control.reset", defaultValue: "Reset"),
+          systemImage: "arrow.counterclockwise",
+        )
+        .frame(maxWidth: .infinity)
       }
       .buttonStyle(.bordered)
       .disabled(isResetNoOp)
       .keyboardShortcut("r")
-      .help("Restart the current phase from the beginning (⌘R)")
-      .accessibilityLabel("Reset timer")
+      .help(
+        String(localized: "control.reset.help", defaultValue: "Restart the current phase from the beginning (⌘R)")
+      )
+      .accessibilityLabel(
+        String(localized: "control.reset.a11y", defaultValue: "Reset timer")
+      )
 
       Button {
         if skipDiscardsFocusProgress {
@@ -344,23 +440,44 @@ struct MenuContentView: View {
           timer.skip()
         }
       } label: {
-        Label("Skip", systemImage: "forward.fill")
-          .frame(maxWidth: .infinity)
+        Label(
+          String(localized: "control.skip", defaultValue: "Skip"),
+          systemImage: "forward.fill",
+        )
+        .frame(maxWidth: .infinity)
       }
       .buttonStyle(.bordered)
       .keyboardShortcut(.rightArrow, modifiers: .command)
-      .help("Skip ahead to the next phase (⌘→)")
-      .accessibilityLabel("Skip to next phase")
+      .help(
+        String(localized: "control.skip.help", defaultValue: "Skip ahead to the next phase (⌘→)")
+      )
+      .accessibilityLabel(
+        String(localized: "control.skip.a11y", defaultValue: "Skip to next phase")
+      )
       .confirmationDialog(
-        "Skip this focus session?",
+        String(
+          localized: "skip.confirm.title",
+          defaultValue: "Skip this focus session?",
+        ),
         isPresented: $showSkipConfirmation,
       ) {
-        Button("Skip Session", role: .destructive) {
+        Button(
+          String(localized: "skip.confirm.action", defaultValue: "Skip Session"),
+          role: .destructive,
+        ) {
           timer.skip()
         }
-        Button("Cancel", role: .cancel) {}
+        Button(
+          String(localized: "skip.confirm.cancel", defaultValue: "Cancel"),
+          role: .cancel,
+        ) {}
       } message: {
-        Text("Skipped sessions aren't recorded in your statistics.")
+        Text(
+          String(
+            localized: "skip.confirm.message",
+            defaultValue: "Skipped sessions aren't recorded in your statistics.",
+          )
+        )
       }
     }
   }
@@ -373,31 +490,43 @@ struct MenuContentView: View {
   private var bottomRow: some View {
     HStack {
       SettingsLink {
-        Text("Settings…")
+        Text(String(localized: "bottomRow.settings.label", defaultValue: "Settings…"))
       }
       .buttonStyle(.borderless)
       .keyboardShortcut(",")
-      .help("Open PomodoroBar settings (⌘,)")
-      .accessibilityLabel("Open settings")
+      .help(
+        String(localized: "bottomRow.settings.help", defaultValue: "Open PomodoroBar settings (⌘,)")
+      )
+      .accessibilityLabel(
+        String(localized: "bottomRow.settings.a11y", defaultValue: "Open settings")
+      )
 
       Spacer()
 
-      Button("Statistics…") {
+      Button(String(localized: "bottomRow.statistics.label", defaultValue: "Statistics…")) {
         openWindow(id: WindowId.statistics)
       }
       .buttonStyle(.borderless)
-      .help("Show your focus history")
-      .accessibilityLabel("Open statistics")
+      .help(
+        String(localized: "bottomRow.statistics.help", defaultValue: "Show your focus history")
+      )
+      .accessibilityLabel(
+        String(localized: "bottomRow.statistics.a11y", defaultValue: "Open statistics")
+      )
 
       Spacer()
 
-      Button("Quit") {
+      Button(String(localized: "bottomRow.quit.label", defaultValue: "Quit")) {
         NSApp.terminate(nil)
       }
       .buttonStyle(.borderless)
       .keyboardShortcut("q")
-      .help("Quit PomodoroBar (⌘Q)")
-      .accessibilityLabel("Quit PomodoroBar")
+      .help(
+        String(localized: "bottomRow.quit.help", defaultValue: "Quit PomodoroBar (⌘Q)")
+      )
+      .accessibilityLabel(
+        String(localized: "bottomRow.quit.a11y", defaultValue: "Quit PomodoroBar")
+      )
     }
     .font(Typography.compactLabel)
   }
@@ -407,22 +536,24 @@ struct MenuContentView: View {
   private var runStateLabel: String {
     switch timer.runState {
     case .idle:
-      "Ready"
+      return String(localized: "runState.idle", defaultValue: "Ready")
     case .running:
-      timer.isWaitingForFocusApp ? "Waiting" : "Running"
+      return timer.isWaitingForFocusApp
+        ? String(localized: "runState.waiting", defaultValue: "Waiting")
+        : String(localized: "runState.running", defaultValue: "Running")
     case .paused:
-      "Paused"
+      return String(localized: "runState.paused", defaultValue: "Paused")
     }
   }
 
   private var primaryButtonTitle: String {
     switch timer.runState {
     case .idle:
-      "Start"
+      return String(localized: "control.start", defaultValue: "Start")
     case .running:
-      "Pause"
+      return String(localized: "control.pause", defaultValue: "Pause")
     case .paused:
-      "Resume"
+      return String(localized: "control.resume", defaultValue: "Resume")
     }
   }
 

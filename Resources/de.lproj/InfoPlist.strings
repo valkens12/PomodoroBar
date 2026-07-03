@@ -1,0 +1,3 @@
+/* PomodoroBar — German localization for Info.plist prose keys. */
+
+"NSAppleEventsUsageDescription" = "PomodoroBar kann den aktuellen Tab von Safari prüfen, um nur dann herunterzuzählen, wenn du auf einer deiner gewählten Fokus-Webseiten bist.";

@@ -25,6 +25,7 @@ targets:
     sources:
       - path: Sources/PomodoroBar
       - path: Resources/Assets.xcassets
+      - path: Resources/de.lproj
     settings:
       base:
         GENERATE_INFOPLIST_FILE: NO

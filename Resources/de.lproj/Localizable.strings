@@ -1,0 +1,265 @@
+/* PomodoroBar — German localization
+ *
+ * Keys mirror the `String(localized:defaultValue:)` lookup argument at every
+ * call site in the app; the English source string lives inline in the Swift
+ * source. When you add or change a visible string, update this file to match
+ * the new key (or, if the key is unchanged, the new default value).
+ */
+
+/* MARK: - Phases (Models/PomodoroTimer.swift) */
+
+"phase.focus"      = "Fokus";
+"phase.shortBreak" = "Kurze Pause";
+"phase.longBreak"  = "Lange Pause";
+
+/* MARK: - Run state (Views/MenuContentView.swift) */
+
+"runState.idle"     = "Bereit";
+"runState.running"  = "Läuft";
+"runState.paused"   = "Pausiert";
+"runState.waiting"  = "Wartet";
+
+/* MARK: - Primary control (Views/MenuContentView.swift) */
+
+"control.start"  = "Start";
+"control.pause"  = "Pause";
+"control.resume" = "Fortsetzen";
+"control.reset"  = "Zurücksetzen";
+"control.skip"   = "Überspringen";
+
+"control.primary.help" = "%@ den Timer (Leertaste)";
+
+"control.reset.help"   = "Aktuelle Phase von vorne starten (⌘R)";
+"control.reset.a11y"   = "Timer zurücksetzen";
+"control.skip.help"    = "Zur nächsten Phase springen (⌘→)";
+"control.skip.a11y"    = "Zur nächsten Phase springen";
+
+/* MARK: - Skip confirmation dialog (Views/MenuContentView.swift) */
+
+"skip.confirm.title"   = "Diese Fokussitzung überspringen?";
+"skip.confirm.action"  = "Sitzung überspringen";
+"skip.confirm.cancel"  = "Abbrechen";
+"skip.confirm.message" = "Übersprungene Sitzungen werden nicht in deiner Statistik erfasst.";
+
+/* MARK: - Banners (Views/MenuContentView.swift) */
+
+"banner.wrongApp"     = "Pausiert — Fokus-App öffnen";
+"banner.wrongApp.a11y"= "Timer pausiert und wartet darauf, dass eine Fokus-App aktiv wird";
+"banner.wrongTab"     = "Pausiert — falscher Tab";
+"banner.wrongTab.a11y"= "Timer pausiert; aktueller Safari-Tab ist keine Fokus-Webseite";
+"banner.openAppPrefix"= "Öffnen: ";
+"banner.bringApp"     = "%@ in den Vordergrund holen, damit der Timer weiterläuft";
+"banner.detailCurrent"= "Aktuell:";
+"banner.detailAllowed"= "Erlaubt:";
+
+/* MARK: - Session dots & today summary (Views/MenuContentView.swift) */
+
+"dots.a11y"            = "Fortschritt: %1$lld von %2$lld Fokussitzungen abgeschlossen";
+"todaySummary.singular"= "Heute: %lld Min · %@ Sitzung";
+"todaySummary.plural"  = "Heute: %lld Min · %@ Sitzungen";
+"todaySummary.a11y"    = "Heute: %lld Fokusminuten, %lld Sitzungen";
+"todaySummary.hint"    = "Statistikfenster öffnen.";
+"todaySummary.help"    = "Fokusverlauf anzeigen";
+
+/* MARK: - Bottom row (Views/MenuContentView.swift) */
+
+"bottomRow.settings.label" = "Einstellungen…";
+"bottomRow.settings.help"  = "PomodoroBar-Einstellungen öffnen (⌘,)";
+"bottomRow.settings.a11y"  = "Einstellungen öffnen";
+"bottomRow.statistics.label"= "Statistik…";
+"bottomRow.statistics.help" = "Fokusverlauf anzeigen";
+"bottomRow.statistics.a11y" = "Statistik öffnen";
+"bottomRow.quit.label"     = "Beenden";
+"bottomRow.quit.help"      = "PomodoroBar beenden (⌘Q)";
+"bottomRow.quit.a11y"      = "PomodoroBar beenden";
+
+/* MARK: - Phase header (Views/MenuContentView.swift) */
+
+"phaseHeader.a11y" = "Aktuelle Phase: %@";
+"phaseHeader.combined" = "%1$@, %2$@ verbleibend, %3$@";
+
+/* MARK: - Settings tabs (Views/SettingsView.swift) */
+
+"settings.tab.general"     = "Allgemein";
+"settings.tab.focusApps"   = "Fokus-Apps";
+
+/* MARK: - Startup section (Views/SettingsView.swift) */
+
+"startup.header"                = "Autostart";
+"startup.label"                 = "Bei Anmeldung starten";
+"startup.footer.unsupported"    = "Autostart ist verfügbar, wenn die installierte App läuft.";
+"startup.footer.normal"         = "PomodoroBar beim Anmelden automatisch öffnen.";
+"startup.approvalNotice"        = "Benötigt deine Freigabe in den Anmeldeobjekten.";
+"startup.openSettings"          = "Einstellungen öffnen…";
+
+/* MARK: - Menu Bar section (Views/SettingsView.swift) */
+
+"menuBar.header"      = "Menüleiste";
+"menuBar.hideTime"    = "Zeit ausblenden, reifende Tomate zeigen";
+"menuBar.monochrome"  = "Monochromes Symbol";
+"menuBar.footer"      = "Die reifende Tomate ersetzt den Countdown und wechselt von Grün nach Rot, während die Sitzung fortschreitet. Das monochrome Symbol passt sich den eingebauten Menüleisteneinträgen und dem Erscheinungsbild der Menüleiste an.";
+
+/* MARK: - Keyboard section (Views/SettingsView.swift) */
+
+"keyboard.header"            = "Tastatur";
+"keyboard.globalEnabled"     = "Von überall starten / pausieren";
+"keyboard.shortcut"          = "Tastenkürzel";
+"keyboard.footer"            = "Wenn aktiv, schaltet %@ den Timer systemweit um, auch wenn eine andere App im Vordergrund ist. Klicke auf das Tastenkürzel, um es zu ändern.";
+
+/* MARK: - Durations section (Views/SettingsView.swift) */
+
+"durations.header"        = "Dauern";
+"durations.focus"         = "Fokus";
+"durations.shortBreak"    = "Kurze Pause";
+"durations.longBreak"     = "Lange Pause";
+"durations.footer"        = "Lege fest, wie lange jede Phase in Minuten dauert.";
+
+/* MARK: - Cycle section (Views/SettingsView.swift) */
+
+"cycle.header"                = "Zyklus";
+"cycle.sessionsBeforeLong"    = "Sitzungen vor der langen Pause";
+"cycle.footer"                = "Anzahl der Fokussitzungen vor einer langen Pause.";
+
+/* MARK: - Automation section (Views/SettingsView.swift) */
+
+"automation.header"           = "Automatisierung";
+"automation.autoStartBreaks"  = "Pausen automatisch starten";
+"automation.autoStartFocus"   = "Fokus automatisch starten";
+"automation.footer"           = "Wähle, ob die nächste Phase von selbst beginnt.";
+
+/* MARK: - Alerts section (Views/SettingsView.swift) */
+
+"alerts.header"             = "Benachrichtigungen";
+"alerts.notification"       = "Benachrichtigung bei Phasenwechsel";
+"alerts.sound"              = "Sound bei Phasenwechsel";
+"alerts.tick"               = "Jede Sekunde ticken";
+"alerts.footer"             = "Eine Benachrichtigung macht das Ende einer Sitzung sichtbar, auch wenn eine andere App im Vollbildmodus ist. Sounds spielen bei Phasenwechseln und Fokus-Ticks.";
+
+/* MARK: - Support section (Views/SettingsView.swift) */
+
+"support.header"      = "Unterstützen";
+"support.kofi.a11y"   = "Unterstütze mich auf Ko-fi (öffnet sich in deinem Browser)";
+"support.footer"      = "Wenn PomodoroBar dir hilft, dich zu konzentrieren, kannst du mir auf Ko-fi einen Kaffee spendieren. Völlig optional — es öffnet Ko-fi in deinem Browser.";
+
+/* MARK: - Unit labels (Views/SettingsView.swift) */
+
+"unit.minutes"   = "Min";
+"unit.session"   = "Sitzung";
+"unit.sessions"  = "Sitzungen";
+
+/* MARK: - Focus Mode toggle (Views/FocusAppsTab.swift) */
+
+"focusMode.toggle"   = "Timer pausieren, sofern keine Fokus-App aktiv ist";
+"focusMode.header"   = "Fokus-Modus";
+"focusMode.footer"   = "Wenn aktiv, zählt der Timer nur herunter, solange eine dieser Apps im Vordergrund ist. Wechsle zu YouTube und die Tomate pausiert.";
+
+/* MARK: - Focus Apps list (Views/FocusAppsTab.swift) */
+
+"focusApps.header"           = "Fokus-Apps";
+"focusApps.footer"           = "Füge die Apps hinzu, in denen du arbeiten möchtest. Für Safari kannst du optional auf bestimmte Webseiten beschränken — leer lassen, um die ganze App zuzulassen.";
+"focusApps.empty"            = "Noch keine Fokus-Apps.";
+"focusApps.add"              = "App hinzufügen…";
+"focusApps.addHelp"          = "Wähle eine Anwendung, die zur Fokus-Liste hinzugefügt werden soll.";
+"focusApps.chooseFromFinder" = "Aus dem Finder wählen…";
+"focusApps.unknown"          = "Unbekannt";
+"focusApps.remove"           = "%@ aus der Fokus-Liste entfernen";
+"focusApps.removeA11y"       = "%@ entfernen";
+
+/* MARK: - Safari domain editor (Views/FocusAppsTab.swift) */
+
+"domains.header"             = "Auf bestimmte Webseiten beschränken";
+"domains.placeholder"        = "beispiel.de";
+"domains.add"                = "Hinzufügen";
+"domains.addCurrent"         = "Domain des aktuellen Tabs hinzufügen";
+"domains.addCurrentHint"     = "Fügt die Domain des aktuell in Safari geöffneten Tabs hinzu.";
+"domains.primerTitle"        = "Safari-Tab-Zugriff erlauben?";
+"domains.primerContinue"     = "Fortfahren";
+"domains.primerMessage"      = "PomodoroBar benötigt die Berechtigung, den aktuellen Safari-Tab zu prüfen. Dir wird gleich eine Systemabfrage angezeigt — klicke auf OK, um sie zu erlauben.";
+"domains.automationDenied"   = "Automatisierungszugriff verweigert.";
+"domains.openSettings"       = "Einstellungen öffnen…";
+"domain.remove"              = "%@ entfernen";
+"domain.removeA11y"          = "%@ entfernen";
+
+/* MARK: - Statistics (Views/StatisticsView.swift) */
+
+"stats.today"          = "Heute";
+"stats.thisWeek"       = "Diese Woche";
+"stats.thisMonth"      = "Diesen Monat";
+"stats.last7Days"      = "Letzte 7 Tage";
+"stats.last30Days"     = "Letzte 30 Tage";
+"stats.dayAxis"        = "Tag";
+"stats.minutesAxis"    = "Minuten";
+
+"stats.empty.title"    = "Noch keine Fokussitzungen";
+"stats.empty.body"     = "Starte die Tomate und schließe eine Fokussitzung ab, damit deine Statistik hier wächst.";
+
+"stats.sessionsCount.singular" = "%d Sitzung";
+"stats.sessionsCount.plural"   = "%d Sitzungen";
+
+"stats.clear"                = "Verlauf löschen…";
+"stats.clear.hint"           = "Alle erfassten Fokussitzungen löschen.";
+"stats.clear.confirmTitle"   = "Gesamten Fokusverlauf löschen?";
+"stats.clear.confirmAction"  = "Gesamten Verlauf löschen";
+"stats.clear.confirmCancel"  = "Abbrechen";
+"stats.clear.confirmSingular"= "Dies löscht dauerhaft alle %d erfasste Sitzung. Dies kann nicht rückgängig gemacht werden.";
+"stats.clear.confirmPlural"  = "Dies löscht dauerhaft alle %d erfassten Sitzungen. Dies kann nicht rückgängig gemacht werden.";
+
+/* MARK: - Accessible focus durations (Views/StatisticsView.swift) */
+
+"duration.minuteFocus"        = "%d Minute Fokuszeit";
+"duration.minutesFocus"       = "%d Minuten Fokuszeit";
+"duration.hourFocus"          = "%d Stunde Fokuszeit";
+"duration.hoursFocusPlural"   = "%d Stunden Fokuszeit";
+"duration.hourN"              = "%d Stunde";
+"duration.hoursN"             = "%d Stunden";
+"duration.minuteN"            = "%d Minute";
+"duration.minutesN"           = "%d Minuten";
+"duration.hoursMinutesFocus"  = "%1$@ %2$@ Fokuszeit";
+
+/* MARK: - Hotkey recorder (Views/HotkeyRecorderField.swift) */
+
+"hotkey.idle"            = "Tastenkürzel eingeben…";
+"hotkey.recordingHelp"   = "Neues Tastenkürzel drücken, oder Escape zum Abbrechen";
+"hotkey.idleHelp"        = "Klicken und dann ein neues Tastenkürzel drücken";
+"hotkey.a11y"            = "Globales Tastenkürzel: %@";
+"hotkey.hint"            = "Aufnahme starten; neues Tastenkürzel drücken, um es festzulegen.";
+
+/* MARK: - Menu bar item accessibility (Views/TimerMenuBarLabel.swift) */
+
+"menubar.idle"            = "Pomodoro bereit, %@";
+"menubar.running"         = "Pomodoro %@ läuft, %@ verbleibend";
+"menubar.runningWaiting"  = "Pomodoro %@, pausiert, wartet auf Fokus-App";
+"menubar.paused"          = "Pomodoro %@ pausiert, %@ verbleibend";
+
+/* MARK: - Notifications (Support/NotificationManager.swift) */
+
+"notification.action.skip"       = "Überspringen";
+"notification.action.startFocus" = "Fokus starten";
+"notification.action.startBreak" = "Pause starten";
+"notification.title.focusDone"   = "Fokussitzung abgeschlossen";
+"notification.title.breakDone"   = "Pause vorbei";
+"notification.body.autoStart"    = "Starte %@ (%d Min).";
+"notification.body.manualStart"  = "%@ (%d Min) ist bereit.";
+
+/* MARK: - Key combo (Support/KeyCombo.swift) */
+
+"keycombo.control"  = "Strg";
+"keycombo.option"   = "Wahltaste";
+"keycombo.shift"    = "Umschalttaste";
+"keycombo.command"  = "Befehlstaste";
+
+"keycombo.special.space"          = "Leertaste";
+"keycombo.special.return"         = "Eingabetaste";
+"keycombo.special.keypadEnter"    = "Eingabe";
+"keycombo.special.tab"            = "Tabulator";
+"keycombo.special.delete"         = "Löschen";
+"keycombo.special.forwardDelete"  = "Vorwärts löschen";
+"keycombo.special.escape"         = "Escape";
+"keycombo.special.home"           = "Pos 1";
+"keycombo.special.end"            = "Ende";
+"keycombo.special.pageUp"         = "Bild auf";
+"keycombo.special.pageDown"       = "Bild ab";
+"keycombo.special.leftArrow"      = "Pfeil links";
+"keycombo.special.rightArrow"     = "Pfeil rechts";
+"keycombo.special.upArrow"        = "Pfeil oben";
+"keycombo.special.downArrow"      = "Pfeil unten";

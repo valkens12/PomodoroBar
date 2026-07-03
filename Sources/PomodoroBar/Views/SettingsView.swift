@@ -19,10 +19,16 @@ struct SettingsView: View {
   var body: some View {
     TabView {
       GeneralTab()
-        .tabItem { Label("General", systemImage: "timer") }
+        .tabItem {
+          Label(String(localized: "settings.tab.general", defaultValue: "General"),
+                systemImage: "timer")
+        }
 
       FocusAppsTab()
-        .tabItem { Label("Focus Apps", systemImage: "lock.shield") }
+        .tabItem {
+          Label(String(localized: "settings.tab.focusApps", defaultValue: "Focus Apps"),
+                systemImage: "lock.shield")
+        }
     }
     .frame(
       minWidth: 460, idealWidth: 520, maxWidth: 640,
@@ -81,7 +87,11 @@ private struct GeneralTab: View {
   private var startupSection: some View {
     Section {
       Toggle(isOn: launchAtLoginBinding) {
-        settingLabel("Launch at login", systemImage: "power", tint: Theme.tomatoOrange)
+        settingLabel(
+          String(localized: "startup.label", defaultValue: "Launch at login"),
+          systemImage: "power",
+          tint: Theme.tomatoOrange,
+        )
       }
       .disabled(loginItemStatus == .unsupported)
 
@@ -99,12 +109,18 @@ private struct GeneralTab: View {
         .font(.system(.caption, design: .rounded))
       }
     } header: {
-      Text("Startup")
+      Text(String(localized: "startup.header", defaultValue: "Startup"))
     } footer: {
       Text(
         loginItemStatus == .unsupported
-          ? "Launch at login is available when running the installed app."
-          : "Open PomodoroBar automatically when you log in."
+          ? String(
+            localized: "startup.footer.unsupported",
+            defaultValue: "Launch at login is available when running the installed app."
+          )
+          : String(
+            localized: "startup.footer.normal",
+            defaultValue: "Open PomodoroBar automatically when you log in."
+          )
       )
     }
   }
@@ -116,9 +132,19 @@ private struct GeneralTab: View {
     HStack(spacing: 4) {
       Image(systemName: "exclamationmark.triangle.fill")
         .foregroundStyle(.orange)
-      Text("Needs your approval in Login Items.")
+      Text(
+        String(
+          localized: "startup.approvalNotice",
+          defaultValue: "Needs your approval in Login Items."
+        )
+      )
         .foregroundStyle(.secondary)
-      Button("Open Settings…") {
+      Button(
+        String(
+          localized: "startup.openSettings",
+          defaultValue: "Open Settings…"
+        )
+      ) {
         LoginItem.openLoginItemsSettings()
       }
       .buttonStyle(.link)
@@ -149,26 +175,28 @@ private struct GeneralTab: View {
     Section {
       Toggle(isOn: $settings.hideMenuBarTime) {
         settingLabel(
-          "Hide time, show ripening tomato",
+          String(
+            localized: "menuBar.hideTime",
+            defaultValue: "Hide time, show ripening tomato"
+          ),
           systemImage: "leaf.fill",
           tint: Theme.leafGreen,
         )
       }
       Toggle(isOn: $settings.monochromeMenuBarIcon) {
         settingLabel(
-          "Monochrome icon",
+          String(localized: "menuBar.monochrome", defaultValue: "Monochrome icon"),
           systemImage: "circle.lefthalf.filled",
           tint: Theme.vineGreen,
         )
       }
     } header: {
-      Text("Menu Bar")
+      Text(String(localized: "menuBar.header", defaultValue: "Menu Bar"))
     } footer: {
-      Text(
-        "The ripening tomato replaces the countdown, going green to red as "
-        + "the session progresses. The monochrome icon matches the built-in "
-        + "menu bar items and adapts to the menu bar's appearance."
-      )
+      Text(String(
+        localized: "menuBar.footer",
+        defaultValue: "The ripening tomato replaces the countdown, going green to red as the session progresses. The monochrome icon matches the built-in menu bar items and adapts to the menu bar's appearance."
+      ))
     }
   }
 
@@ -178,7 +206,10 @@ private struct GeneralTab: View {
     Section {
       Toggle(isOn: $settings.globalHotkeyEnabled) {
         settingLabel(
-          "Start / pause from anywhere",
+          String(
+            localized: "keyboard.globalEnabled",
+            defaultValue: "Start / pause from anywhere"
+          ),
           systemImage: "keyboard",
           tint: Theme.tomatoOrange,
         )
@@ -190,17 +221,25 @@ private struct GeneralTab: View {
       LabeledContent {
         HotkeyRecorderField(combo: $settings.globalHotkey)
       } label: {
-        settingLabel("Shortcut", systemImage: "command", tint: Theme.vineGreen)
+        settingLabel(
+          String(localized: "keyboard.shortcut", defaultValue: "Shortcut"),
+          systemImage: "command",
+          tint: Theme.vineGreen,
+        )
       }
       .disabled(!settings.globalHotkeyEnabled)
     } header: {
-      Text("Keyboard")
+      Text(String(localized: "keyboard.header", defaultValue: "Keyboard"))
     } footer: {
       let shortcut = settings.globalHotkey.displayString
-      Text(
-        "When on, \(shortcut) toggles the timer system-wide, even while "
-        + "another app is active. Click the shortcut to record a different one."
-      )
+      Text(String(
+        format: String(
+          localized: "keyboard.footer",
+          defaultValue: "When on, %@ toggles the timer system-wide, even while another app is active. Click the shortcut to record a different one."
+        ),
+        locale: .current,
+        shortcut,
+      ))
     }
   }
 
@@ -211,27 +250,44 @@ private struct GeneralTab: View {
     @Bindable var settings = settings
     Section {
       stepperRow(
-        label: settingLabel("Focus", systemImage: "brain.head.profile", tint: Theme.tomatoRed),
+        label: settingLabel(
+          String(localized: "durations.focus", defaultValue: "Focus"),
+          systemImage: "brain.head.profile",
+          tint: Theme.tomatoRed,
+        ),
         range: AppSettings.Bounds.focusMinutes,
-        unit: "min",
+        unit: String(localized: "unit.minutes", defaultValue: "min"),
         binding: $settings.focusMinutes,
       )
       stepperRow(
-        label: settingLabel("Short Break", systemImage: "cup.and.saucer", tint: Theme.leafGreen),
+        label: settingLabel(
+          String(localized: "durations.shortBreak", defaultValue: "Short Break"),
+          systemImage: "cup.and.saucer",
+          tint: Theme.leafGreen,
+        ),
         range: AppSettings.Bounds.shortBreakMinutes,
-        unit: "min",
+        unit: String(localized: "unit.minutes", defaultValue: "min"),
         binding: $settings.shortBreakMinutes,
       )
       stepperRow(
-        label: settingLabel("Long Break", systemImage: "leaf", tint: Theme.vineGreen),
+        label: settingLabel(
+          String(localized: "durations.longBreak", defaultValue: "Long Break"),
+          systemImage: "leaf",
+          tint: Theme.vineGreen,
+        ),
         range: AppSettings.Bounds.longBreakMinutes,
-        unit: "min",
+        unit: String(localized: "unit.minutes", defaultValue: "min"),
         binding: $settings.longBreakMinutes,
       )
     } header: {
-      Text("Durations")
+      Text(String(localized: "durations.header", defaultValue: "Durations"))
     } footer: {
-      Text("Set how long each phase lasts in minutes.")
+      Text(
+        String(
+          localized: "durations.footer",
+          defaultValue: "Set how long each phase lasts in minutes."
+        )
+      )
     }
   }
 
@@ -241,16 +297,29 @@ private struct GeneralTab: View {
     Section {
       stepperRow(
         label: settingLabel(
-          "Sessions Before Long Break", systemImage: "repeat", tint: Theme.tomatoOrange,
+          String(
+            localized: "cycle.sessionsBeforeLong",
+            defaultValue: "Sessions Before Long Break"
+          ),
+          systemImage: "repeat",
+          tint: Theme.tomatoOrange,
         ),
         range: AppSettings.Bounds.sessionsBeforeLongBreak,
-        unit: settings.sessionsBeforeLongBreak == 1 ? "session" : "sessions",
+        unit: String(
+          localized: settings.sessionsBeforeLongBreak == 1 ? "unit.session" : "unit.sessions",
+          defaultValue: settings.sessionsBeforeLongBreak == 1 ? "session" : "sessions",
+        ),
         binding: $settings.sessionsBeforeLongBreak,
       )
     } header: {
-      Text("Cycle")
+      Text(String(localized: "cycle.header", defaultValue: "Cycle"))
     } footer: {
-      Text("Number of focus sessions before a long break.")
+      Text(
+        String(
+          localized: "cycle.footer",
+          defaultValue: "Number of focus sessions before a long break."
+        )
+      )
     }
   }
 
@@ -259,15 +328,28 @@ private struct GeneralTab: View {
     @Bindable var settings = settings
     Section {
       Toggle(isOn: $settings.autoStartBreaks) {
-        settingLabel("Auto-start breaks", systemImage: "play.circle", tint: Theme.leafGreen)
+        settingLabel(
+          String(localized: "automation.autoStartBreaks", defaultValue: "Auto-start breaks"),
+          systemImage: "play.circle",
+          tint: Theme.leafGreen,
+        )
       }
       Toggle(isOn: $settings.autoStartFocus) {
-        settingLabel("Auto-start focus", systemImage: "arrow.forward.circle", tint: Theme.tomatoRed)
+        settingLabel(
+          String(localized: "automation.autoStartFocus", defaultValue: "Auto-start focus"),
+          systemImage: "arrow.forward.circle",
+          tint: Theme.tomatoRed,
+        )
       }
     } header: {
-      Text("Automation")
+      Text(String(localized: "automation.header", defaultValue: "Automation"))
     } footer: {
-      Text("Choose whether the next phase starts on its own.")
+      Text(
+        String(
+          localized: "automation.footer",
+          defaultValue: "Choose whether the next phase starts on its own."
+        )
+      )
     }
   }
 
@@ -277,7 +359,12 @@ private struct GeneralTab: View {
     Section {
       Toggle(isOn: $settings.notificationsEnabled) {
         settingLabel(
-          "Phase change notification", systemImage: "bell.badge", tint: Theme.tomatoRed,
+          String(
+            localized: "alerts.notification",
+            defaultValue: "Phase change notification"
+          ),
+          systemImage: "bell.badge",
+          tint: Theme.tomatoRed,
         )
       }
       .disabled(!NotificationManager.isSupported)
@@ -287,18 +374,26 @@ private struct GeneralTab: View {
         }
       }
       Toggle(isOn: $settings.soundEnabled) {
-        settingLabel("Phase change sound", systemImage: "bell", tint: Theme.tomatoOrange)
+        settingLabel(
+          String(localized: "alerts.sound", defaultValue: "Phase change sound"),
+          systemImage: "bell",
+          tint: Theme.tomatoOrange,
+        )
       }
       Toggle(isOn: $settings.tickEnabled) {
-        settingLabel("Tick every second", systemImage: "metronome", tint: Theme.vineGreen)
+        settingLabel(
+          String(localized: "alerts.tick", defaultValue: "Tick every second"),
+          systemImage: "metronome",
+          tint: Theme.vineGreen,
+        )
       }
     } header: {
-      Text("Alerts")
+      Text(String(localized: "alerts.header", defaultValue: "Alerts"))
     } footer: {
-      Text(
-        "A notification makes the end of a session visible even when another "
-        + "app is full-screen. Sounds play for phase changes and focus ticks."
-      )
+      Text(String(
+        localized: "alerts.footer",
+        defaultValue: "A notification makes the end of a session visible even when another app is full-screen. Sounds play for phase changes and focus ticks."
+      ))
     }
   }
 
@@ -317,18 +412,23 @@ private struct GeneralTab: View {
             .resizable()
             .aspectRatio(contentMode: .fit)
             .frame(height: 36)
-            .accessibilityLabel("Support me on Ko-fi (opens in your browser)")
+            .accessibilityLabel(
+              String(
+                localized: "support.kofi.a11y",
+                defaultValue: "Support me on Ko-fi (opens in your browser)"
+              )
+            )
           Spacer()
         }
       }
       .buttonStyle(.plain)
     } header: {
-      Text("Support")
+      Text(String(localized: "support.header", defaultValue: "Support"))
     } footer: {
-      Text(
-        "If PomodoroBar helps you focus, you can buy me a coffee on Ko-fi. "
-        + "Totally optional, and it opens Ko-fi in your browser."
-      )
+      Text(String(
+        localized: "support.footer",
+        defaultValue: "If PomodoroBar helps you focus, you can buy me a coffee on Ko-fi. Totally optional, and it opens Ko-fi in your browser."
+      ))
     }
   }
 

@@ -48,6 +48,15 @@ cp "${INFO_PLIST}" "${CONTENTS_DIR}/Info.plist"
 cp "${APP_ICON}" "${RESOURCES_DIR}/AppIcon.icns"
 chmod 755 "${MACOS_DIR}/${APP_NAME}"
 
+echo "==> Copying localized resources..."
+# Ship any *.lproj directories from Resources/ into the bundle so the app
+# carries its translated strings (Localizable.strings, InfoPlist.strings).
+shopt -s nullglob
+for lproj in "${PROJECT_ROOT}/Resources"/*.lproj; do
+  cp -R "${lproj}" "${RESOURCES_DIR}/"
+done
+shopt -u nullglob
+
 echo "==> Code signing..."
 CODESIGN_IDENTITY="${CODESIGN_IDENTITY:--}"
 codesign --force --deep --options runtime --timestamp=none \

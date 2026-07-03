@@ -66,8 +66,10 @@ capture_shot() {
   local name="$1" raw="$2"
   local path="${RAW_DIR}/${raw}"
   echo "  Capture: ${name}  ->  ${path}"
-  echo "  (Click the window, or press Space to drag a region. Esc to skip.)"
-  if screencapture -o -x -W "${path}" 2>/dev/null; then
+  echo "  (Drag a rectangle; this keeps menu-bar popovers visible.)"
+  # -i = interactive region drag. The user drags a rectangle and the click
+  # never lands on a popover, so the popover stays in the captured region.
+  if screencapture -i -x "${path}" 2>/dev/null; then
     echo "    saved."
   else
     echo "    skipped."
@@ -131,8 +133,10 @@ cmd_compose() {
   mkdir -p "${FINAL_DIR}"
   resolve_colors
   echo "==> Composing final screenshots (${THEME}) into ${FINAL_DIR}"
+  local target="${2:-}"   # optional single-shot name to compose
   for shot in "${SHOTS[@]}"; do
     IFS='|' read -r name headline sub raw scale <<< "${shot}"
+    if [[ -n "${target}" && "${target}" != "${name}" ]]; then continue; fi
     compose_shot "${name}" "${headline}" "${sub}" "${raw}" "${scale}"
   done
   echo "==> Done. Upload the PNGs in ${FINAL_DIR} to App Store Connect."

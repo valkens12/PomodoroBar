@@ -99,13 +99,36 @@ private extension PomodoroTimer {
   var accessibilityLabel: String {
     switch runState {
     case .idle:
-      return "Pomodoro idle, \(phase.label)"
+      return String(
+        format: String(
+          localized: "menubar.idle", defaultValue: "Pomodoro idle, %@"
+        ),
+        phase.label,
+      )
     case .running:
       return isWaitingForFocusApp
-        ? "Pomodoro \(phase.label), paused, waiting for a focus app"
-        : "Pomodoro \(phase.label), \(formattedRemaining) remaining"
+        ? String(
+          format: String(
+            localized: "menubar.runningWaiting",
+            defaultValue: "Pomodoro %@, paused, waiting for a focus app"
+          ),
+          phase.label,
+        )
+        : String(
+          format: String(
+            localized: "menubar.running",
+            defaultValue: "Pomodoro %@ running, %@ remaining"
+          ),
+          phase.label, formattedRemaining,
+        )
     case .paused:
-      return "Pomodoro \(phase.label) paused, \(formattedRemaining) remaining"
+      return String(
+        format: String(
+          localized: "menubar.paused",
+          defaultValue: "Pomodoro %@ paused, %@ remaining"
+        ),
+        phase.label, formattedRemaining,
+      )
     }
   }
 }

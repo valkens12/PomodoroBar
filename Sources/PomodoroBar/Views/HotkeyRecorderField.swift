@@ -21,7 +21,11 @@ struct HotkeyRecorderField: View {
         beginRecording()
       }
     } label: {
-      Text(isRecording ? "Type shortcut…" : combo.displayString)
+      Text(
+        isRecording
+          ? String(localized: "hotkey.idle", defaultValue: "Type shortcut…")
+          : combo.displayString
+      )
         .font(.system(.body, design: .rounded))
         .foregroundStyle(isRecording ? .secondary : .primary)
         .frame(minWidth: 100)
@@ -29,11 +33,29 @@ struct HotkeyRecorderField: View {
     .buttonStyle(.bordered)
     .help(
       isRecording
-        ? "Press the new key combination, or Escape to cancel"
-        : "Click, then press a new key combination"
+        ? String(
+          localized: "hotkey.recordingHelp",
+          defaultValue: "Press the new key combination, or Escape to cancel"
+        )
+        : String(
+          localized: "hotkey.idleHelp",
+          defaultValue: "Click, then press a new key combination"
+        )
     )
-    .accessibilityLabel("Global shortcut: \(combo.accessibleDescription)")
-    .accessibilityHint("Starts recording; press the new key combination to set it.")
+    .accessibilityLabel(
+      String(
+        format: String(
+          localized: "hotkey.a11y", defaultValue: "Global shortcut: %@"
+        ),
+        combo.accessibleDescription,
+      )
+    )
+    .accessibilityHint(
+      String(
+        localized: "hotkey.hint",
+        defaultValue: "Starts recording; press the new key combination to set it."
+      )
+    )
     .onDisappear {
       cancelRecording()
     }

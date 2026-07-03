@@ -35,11 +35,13 @@ final class PomodoroTimer {
     var label: String {
       switch self {
       case .focus:
-        return "Focus"
+        return String(localized: "phase.focus", defaultValue: "Focus")
       case .shortBreak:
-        return "Short Break"
+        return String(
+          localized: "phase.shortBreak", defaultValue: "Short Break"
+        )
       case .longBreak:
-        return "Long Break"
+        return String(localized: "phase.longBreak", defaultValue: "Long Break")
       }
     }
 

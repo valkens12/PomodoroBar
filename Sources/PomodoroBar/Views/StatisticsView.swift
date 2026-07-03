@@ -16,14 +16,81 @@ private func formattedFocusDuration(_ minutes: Int) -> String {
 /// "hour(s)"/"minute(s)" instead of the compact "h"/"m" suffixes.
 private func accessibleFocusDuration(_ minutes: Int) -> String {
   guard minutes > 90 else {
-    return "\(minutes) focus \(minutes == 1 ? "minute" : "minutes")"
+    // Two distinct keys for the singular/plural English forms, with English
+    // fallbacks — VoiceOver always reads the spelled-out form regardless of
+    // how the chart-axis label is rendered.
+    if minutes == 1 {
+      return String(
+        format: String(
+          localized: "duration.minuteFocus", defaultValue: "%d minute focus time"
+        ),
+        minutes,
+      )
+    }
+    return String(
+      format: String(
+        localized: "duration.minutesFocus", defaultValue: "%d minutes focus time"
+      ),
+      minutes,
+    )
   }
   let hours = minutes / 60
   let remainder = minutes % 60
-  let hourPart = "\(hours) \(hours == 1 ? "hour" : "hours")"
-  guard remainder > 0 else { return "\(hourPart) focus time" }
-  let minutePart = "\(remainder) \(remainder == 1 ? "minute" : "minutes")"
-  return "\(hourPart) \(minutePart) focus time"
+  if remainder == 0 {
+    if hours == 1 {
+      return String(
+        format: String(
+          localized: "duration.hourFocus", defaultValue: "%d hour focus time"
+        ),
+        hours,
+      )
+    }
+    return String(
+      format: String(
+        localized: "duration.hoursFocusPlural", defaultValue: "%d hours focus time"
+      ),
+      hours,
+    )
+  }
+  let hourPart: String = {
+    if hours == 1 {
+      return String(
+        format: String(
+          localized: "duration.hourN", defaultValue: "%d hour"
+        ),
+        hours,
+      )
+    }
+    return String(
+      format: String(
+        localized: "duration.hoursN", defaultValue: "%d hours"
+      ),
+      hours,
+    )
+  }()
+  let minutePart: String = {
+    if remainder == 1 {
+      return String(
+        format: String(
+          localized: "duration.minuteN", defaultValue: "%d minute"
+        ),
+        remainder,
+      )
+    }
+    return String(
+      format: String(
+        localized: "duration.minutesN", defaultValue: "%d minutes"
+      ),
+      remainder,
+    )
+  }()
+  return String(
+    format: String(
+      localized: "duration.hoursMinutesFocus",
+      defaultValue: "%1$@ %2$@ focus time"
+    ),
+    hourPart, minutePart,
+  )
 }
 
 /// Focus-history statistics: today / week / month summaries, a 7-day bar chart,
@@ -67,10 +134,16 @@ struct StatisticsView: View {
     VStack(spacing: 14) {
       TomatoGlyph(size: 56, phase: .focus)
         .accessibilityHidden(true)
-      Text("No focus sessions yet")
+      Text(String(localized: "stats.empty.title", defaultValue: "No focus sessions yet"))
         .font(.system(.title3, design: .rounded).weight(.semibold))
         .foregroundStyle(Theme.textColor(for: .focus))
-      Text("Start the tomato and finish a focus session to see your stats grow here.")
+      Text(
+        String(
+          localized: "stats.empty.body",
+          defaultValue:
+            "Start the tomato and finish a focus session to see your stats grow here."
+        )
+      )
         .font(.system(.body, design: .rounded))
         .foregroundStyle(.secondary)
         .multilineTextAlignment(.center)
@@ -85,17 +158,17 @@ struct StatisticsView: View {
   private var summaryCards: some View {
     HStack(spacing: 12) {
       StatCard(
-        title: "Today",
+        title: String(localized: "stats.today", defaultValue: "Today"),
         minutes: statistics.todayMinutes,
         sessions: statistics.todaySessions,
       )
       StatCard(
-        title: "This Week",
+        title: String(localized: "stats.thisWeek", defaultValue: "This Week"),
         minutes: statistics.weekMinutes,
         sessions: statistics.weekSessions,
       )
       StatCard(
-        title: "This Month",
+        title: String(localized: "stats.thisMonth", defaultValue: "This Month"),
         minutes: statistics.monthMinutes,
         sessions: statistics.monthSessions,
       )
@@ -108,14 +181,21 @@ struct StatisticsView: View {
     let selected = nearestDailyTotal(to: selectedSevenDayDate, in: statistics.lastSevenDays)
 
     return VStack(alignment: .leading, spacing: 8) {
-      Text("Last 7 Days")
+      Text(String(localized: "stats.last7Days", defaultValue: "Last 7 Days"))
         .font(.system(.headline, design: .rounded))
         .foregroundStyle(Theme.textColor(for: .focus))
 
       Chart(statistics.lastSevenDays) { day in
         BarMark(
-          x: .value("Day", day.date, unit: .day),
-          y: .value("Minutes", day.minutes),
+          x: .value(
+            String(localized: "stats.dayAxis", defaultValue: "Day"),
+            day.date,
+            unit: .day,
+          ),
+          y: .value(
+            String(localized: "stats.minutesAxis", defaultValue: "Minutes"),
+            day.minutes,
+          ),
         )
         .foregroundStyle(
           .linearGradient(
@@ -128,7 +208,13 @@ struct StatisticsView: View {
         .opacity(selected == nil || selected?.id == day.id ? 1 : 0.35)
 
         if let selected {
-          RuleMark(x: .value("Day", selected.date, unit: .day))
+          RuleMark(
+            x: .value(
+              String(localized: "stats.dayAxis", defaultValue: "Day"),
+              selected.date,
+              unit: .day,
+            )
+          )
             .foregroundStyle(Theme.vineGreen.opacity(0.5))
             .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
             .annotation(position: .top, spacing: 4) {
@@ -163,22 +249,36 @@ struct StatisticsView: View {
     let selected = nearestDailyTotal(to: selectedThirtyDayDate, in: statistics.lastThirtyDays)
 
     return VStack(alignment: .leading, spacing: 8) {
-      Text("Last 30 Days")
+      Text(String(localized: "stats.last30Days", defaultValue: "Last 30 Days"))
         .font(.system(.headline, design: .rounded))
         .foregroundStyle(Theme.textColor(for: .longBreak))
 
       Chart(statistics.lastThirtyDays) { day in
         LineMark(
-          x: .value("Day", day.date, unit: .day),
-          y: .value("Minutes", day.minutes),
+          x: .value(
+            String(localized: "stats.dayAxis", defaultValue: "Day"),
+            day.date,
+            unit: .day,
+          ),
+          y: .value(
+            String(localized: "stats.minutesAxis", defaultValue: "Minutes"),
+            day.minutes,
+          ),
         )
         .foregroundStyle(Theme.tomatoRed)
         .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round))
         .interpolationMethod(.catmullRom)
 
         AreaMark(
-          x: .value("Day", day.date, unit: .day),
-          y: .value("Minutes", day.minutes),
+          x: .value(
+            String(localized: "stats.dayAxis", defaultValue: "Day"),
+            day.date,
+            unit: .day,
+          ),
+          y: .value(
+            String(localized: "stats.minutesAxis", defaultValue: "Minutes"),
+            day.minutes,
+          ),
         )
         .foregroundStyle(
           .linearGradient(
@@ -190,7 +290,13 @@ struct StatisticsView: View {
         .interpolationMethod(.catmullRom)
 
         if let selected {
-          RuleMark(x: .value("Day", selected.date, unit: .day))
+          RuleMark(
+            x: .value(
+              String(localized: "stats.dayAxis", defaultValue: "Day"),
+              selected.date,
+              unit: .day,
+            )
+          )
             .foregroundStyle(Theme.vineGreen.opacity(0.5))
             .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
             .annotation(position: .top, spacing: 4) {
@@ -198,8 +304,15 @@ struct StatisticsView: View {
             }
 
           PointMark(
-            x: .value("Day", selected.date, unit: .day),
-            y: .value("Minutes", selected.minutes),
+            x: .value(
+              String(localized: "stats.dayAxis", defaultValue: "Day"),
+              selected.date,
+              unit: .day,
+            ),
+            y: .value(
+              String(localized: "stats.minutesAxis", defaultValue: "Minutes"),
+              selected.minutes,
+            ),
           )
           .foregroundStyle(Theme.tomatoRed)
           .symbolSize(60)
@@ -254,24 +367,53 @@ struct StatisticsView: View {
   private var clearButton: some View {
     HStack {
       Spacer()
-      Button("Clear History…", role: .destructive) {
+      Button(
+        String(localized: "stats.clear", defaultValue: "Clear History…"),
+        role: .destructive,
+      ) {
         showClearConfirmation = true
       }
       .buttonStyle(.bordered)
-      .accessibilityHint("Delete all recorded focus sessions.")
+      .accessibilityHint(
+        String(
+          localized: "stats.clear.hint",
+          defaultValue: "Delete all recorded focus sessions."
+        )
+      )
       .confirmationDialog(
-        "Clear all focus history?",
+        String(
+          localized: "stats.clear.confirmTitle",
+          defaultValue: "Clear all focus history?",
+        ),
         isPresented: $showClearConfirmation,
       ) {
-        Button("Clear All History", role: .destructive) {
+        Button(
+          String(
+            localized: "stats.clear.confirmAction",
+            defaultValue: "Clear All History"
+          ),
+          role: .destructive,
+        ) {
           statistics.clearAll()
         }
-        Button("Cancel", role: .cancel) {}
+        Button(
+          String(localized: "skip.confirm.cancel", defaultValue: "Cancel"),
+          role: .cancel,
+        ) {}
       } message: {
+        let count = statistics.records.count
         Text(
-          "This permanently deletes all \(statistics.records.count) recorded "
-          + (statistics.records.count == 1 ? "session" : "sessions")
-          + ". This can't be undone."
+          String(
+            format: String(
+              localized: count == 1
+                ? "stats.clear.confirmSingular"
+                : "stats.clear.confirmPlural",
+              defaultValue: count == 1
+                ? "This permanently deletes all %d recorded session. This can't be undone."
+                : "This permanently deletes all %d recorded sessions. This can't be undone."
+            ),
+            count,
+          )
         )
       }
     }
@@ -306,7 +448,17 @@ private struct StatCard: View {
         .minimumScaleFactor(0.7)
         .accessibilityLabel(accessibleFocusDuration(minutes))
 
-      Text("\(sessions) \(sessions == 1 ? "session" : "sessions")")
+      Text(
+        String(
+          format: String(
+            localized: sessions == 1
+              ? "stats.sessionsCount.singular"
+              : "stats.sessionsCount.plural",
+            defaultValue: sessions == 1 ? "%d session" : "%d sessions"
+          ),
+          sessions,
+        )
+      )
         .font(.system(.footnote, design: .rounded))
         .foregroundStyle(.secondary)
     }

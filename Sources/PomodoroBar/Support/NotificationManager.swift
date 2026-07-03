@@ -97,10 +97,23 @@ enum NotificationManager {
   /// timer is a menu bar accessory, so acting on it shouldn't drag any
   /// window forward.
   private static func registerCategories(in center: UNUserNotificationCenter) {
-    let skip = UNNotificationAction(identifier: actionSkip, title: "Skip")
+    let skip = UNNotificationAction(
+      identifier: actionSkip,
+      title: String(localized: "notification.action.skip", defaultValue: "Skip"),
+    )
 
-    let startFocus = UNNotificationAction(identifier: actionStart, title: "Start Focus")
-    let startBreak = UNNotificationAction(identifier: actionStart, title: "Start Break")
+    let startFocus = UNNotificationAction(
+      identifier: actionStart,
+      title: String(
+        localized: "notification.action.startFocus", defaultValue: "Start Focus"
+      ),
+    )
+    let startBreak = UNNotificationAction(
+      identifier: actionStart,
+      title: String(
+        localized: "notification.action.startBreak", defaultValue: "Start Break"
+      ),
+    )
 
     center.setNotificationCategories([
       UNNotificationCategory(
@@ -133,14 +146,34 @@ enum NotificationManager {
     let content = UNMutableNotificationContent()
     switch finished {
     case .focus:
-      content.title = "Focus session complete"
+      content.title = String(
+        localized: "notification.title.focusDone",
+        defaultValue: "Focus session complete",
+      )
     case .shortBreak, .longBreak:
-      content.title = "Break over"
+      content.title = String(
+        localized: "notification.title.breakDone",
+        defaultValue: "Break over",
+      )
     }
     let nextLabel = next.label.lowercased()
-    content.body = autoStarted
-      ? "Starting \(nextLabel) (\(nextMinutes) min)."
-      : "\(next.label) (\(nextMinutes) min) is ready."
+    if autoStarted {
+      content.body = String(
+        format: String(
+          localized: "notification.body.autoStart",
+          defaultValue: "Starting %@ (%d min)."
+        ),
+        nextLabel, nextMinutes,
+      )
+    } else {
+      content.body = String(
+        format: String(
+          localized: "notification.body.manualStart",
+          defaultValue: "%@ (%d min) is ready."
+        ),
+        next.label, nextMinutes,
+      )
+    }
 
     if withSound {
       content.sound = .default

@@ -60,8 +60,19 @@ struct KeyCombo: Equatable, Sendable {
   /// Spoken form for VoiceOver: "Control Option P".
   var accessibleDescription: String {
     modifierText(
-      control: "Control", option: "Option", shift: "Shift", command: "Command",
-      separator: " "
+      control: String(
+        localized: "keycombo.control", defaultValue: "Control"
+      ),
+      option: String(
+        localized: "keycombo.option", defaultValue: "Option"
+      ),
+      shift: String(
+        localized: "keycombo.shift", defaultValue: "Shift"
+      ),
+      command: String(
+        localized: "keycombo.command", defaultValue: "Command"
+      ),
+      separator: " ",
     ) + spokenKeyName
   }
 
@@ -90,7 +101,13 @@ struct KeyCombo: Equatable, Sendable {
 
   private var spokenKeyName: String {
     if let special = Self.specialKeyNames[keyCode] {
-      return special.spoken
+      // Function-key names (F1…F19) are language-neutral — they double as
+      // their own lookup key, so use the value verbatim. Other entries hold
+      // a localization key.
+      if special.spokenKey.hasPrefix("F") && special.spokenKey.count <= 3 {
+        return special.spokenKey
+      }
+      return String(localized: String.LocalizationValue(special.spokenKey))
     }
     return Self.characterName(for: keyCode) ?? "key \(keyCode)"
   }
@@ -106,23 +123,24 @@ struct KeyCombo: Equatable, Sendable {
   ]
 
   /// Keys whose name isn't a typed character: layout-independent symbols and
-  /// their VoiceOver spellings.
-  private static let specialKeyNames: [UInt32: (symbol: String, spoken: String)] = [
-    UInt32(kVK_Space): ("Space", "Space"),
-    UInt32(kVK_Return): ("↩", "Return"),
-    UInt32(kVK_ANSI_KeypadEnter): ("⌅", "Enter"),
-    UInt32(kVK_Tab): ("⇥", "Tab"),
-    UInt32(kVK_Delete): ("⌫", "Delete"),
-    UInt32(kVK_ForwardDelete): ("⌦", "Forward Delete"),
-    UInt32(kVK_Escape): ("⎋", "Escape"),
-    UInt32(kVK_Home): ("↖", "Home"),
-    UInt32(kVK_End): ("↘", "End"),
-    UInt32(kVK_PageUp): ("⇞", "Page Up"),
-    UInt32(kVK_PageDown): ("⇟", "Page Down"),
-    UInt32(kVK_LeftArrow): ("←", "Left Arrow"),
-    UInt32(kVK_RightArrow): ("→", "Right Arrow"),
-    UInt32(kVK_UpArrow): ("↑", "Up Arrow"),
-    UInt32(kVK_DownArrow): ("↓", "Down Arrow"),
+  /// their VoiceOver spellings. `spoken` is a lookup key for the German
+  /// translation; `symbol` is the layout-independent SF-Symbol-style glyph.
+  private static let specialKeyNames: [UInt32: (symbol: String, spokenKey: String)] = [
+    UInt32(kVK_Space): ("Space", "keycombo.special.space"),
+    UInt32(kVK_Return): ("↩", "keycombo.special.return"),
+    UInt32(kVK_ANSI_KeypadEnter): ("⌅", "keycombo.special.keypadEnter"),
+    UInt32(kVK_Tab): ("⇥", "keycombo.special.tab"),
+    UInt32(kVK_Delete): ("⌫", "keycombo.special.delete"),
+    UInt32(kVK_ForwardDelete): ("⌦", "keycombo.special.forwardDelete"),
+    UInt32(kVK_Escape): ("⎋", "keycombo.special.escape"),
+    UInt32(kVK_Home): ("↖", "keycombo.special.home"),
+    UInt32(kVK_End): ("↘", "keycombo.special.end"),
+    UInt32(kVK_PageUp): ("⇞", "keycombo.special.pageUp"),
+    UInt32(kVK_PageDown): ("⇟", "keycombo.special.pageDown"),
+    UInt32(kVK_LeftArrow): ("←", "keycombo.special.leftArrow"),
+    UInt32(kVK_RightArrow): ("→", "keycombo.special.rightArrow"),
+    UInt32(kVK_UpArrow): ("↑", "keycombo.special.upArrow"),
+    UInt32(kVK_DownArrow): ("↓", "keycombo.special.downArrow"),
     UInt32(kVK_F1): ("F1", "F1"), UInt32(kVK_F2): ("F2", "F2"),
     UInt32(kVK_F3): ("F3", "F3"), UInt32(kVK_F4): ("F4", "F4"),
     UInt32(kVK_F5): ("F5", "F5"), UInt32(kVK_F6): ("F6", "F6"),

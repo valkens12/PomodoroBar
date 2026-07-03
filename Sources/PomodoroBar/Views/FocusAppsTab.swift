@@ -20,17 +20,20 @@ struct FocusAppsTab: View {
     Form {
       Section {
         Toggle(
-          "Pause timer unless a focus app is active",
+          String(
+            localized: "focusMode.toggle",
+            defaultValue: "Pause timer unless a focus app is active"
+          ),
           isOn: $focusGuard.enabled,
         )
         .tint(Theme.tomatoRed)
       } header: {
-        Text("Focus Mode")
+        Text(String(localized: "focusMode.header", defaultValue: "Focus Mode"))
       } footer: {
-        Text(
-          "When on, the timer only counts down while one of these apps is "
-          + "frontmost. Switch to YouTube and the tomato pauses."
-        )
+        Text(String(
+          localized: "focusMode.footer",
+          defaultValue: "When on, the timer only counts down while one of these apps is frontmost. Switch to YouTube and the tomato pauses."
+        ))
       }
 
       Section {
@@ -39,7 +42,7 @@ struct FocusAppsTab: View {
             Image(systemName: "app.dashed")
               .foregroundStyle(.secondary)
               .frame(width: 28, height: 28)
-            Text("No focus apps yet.")
+            Text(String(localized: "focusApps.empty", defaultValue: "No focus apps yet."))
               .foregroundStyle(.secondary)
               .font(.system(.body, design: .rounded))
             Spacer()
@@ -57,12 +60,12 @@ struct FocusAppsTab: View {
 
         addAppMenu
       } header: {
-        Text("Focus Apps")
+        Text(String(localized: "focusApps.header", defaultValue: "Focus Apps"))
       } footer: {
-        Text(
-          "Add the apps you want to work in. For Safari, optionally restrict "
-          + "to specific websites — leave empty to allow the whole app."
-        )
+        Text(String(
+          localized: "focusApps.footer",
+          defaultValue: "Add the apps you want to work in. For Safari, optionally restrict to specific websites — leave empty to allow the whole app."
+        ))
       }
     }
     .formStyle(.grouped)
@@ -85,7 +88,7 @@ struct FocusAppsTab: View {
       let candidates = runningAppCandidates
       if !candidates.isEmpty {
         ForEach(candidates, id: \.processIdentifier) { app in
-          Button(app.localizedName ?? app.bundleIdentifier ?? "Unknown") {
+          Button(app.localizedName ?? app.bundleIdentifier ?? String(localized: "focusApps.unknown", defaultValue: "Unknown")) {
             if let url = app.bundleURL {
               focusGuard.add(url: url)
             }
@@ -93,17 +96,23 @@ struct FocusAppsTab: View {
         }
         Divider()
       }
-      Button("Choose from Finder…") {
+      Button(String(localized: "focusApps.chooseFromFinder", defaultValue: "Choose from Finder…")) {
         showPicker = true
       }
     } label: {
-      Label("Add App…", systemImage: "plus.circle.fill")
+      Label(String(localized: "focusApps.add", defaultValue: "Add App…"),
+            systemImage: "plus.circle.fill")
         .foregroundStyle(Theme.tomatoRed)
     }
     .menuStyle(.button)
     .buttonStyle(.borderless)
     .fixedSize()
-    .accessibilityHint("Choose an application to add to the focus list.")
+    .accessibilityHint(
+      String(
+        localized: "focusApps.addHelp",
+        defaultValue: "Choose an application to add to the focus list."
+      )
+    )
   }
 
   /// Running apps with a regular activation policy that aren't already in the
@@ -190,8 +199,22 @@ private struct FocusAppRow<Icon: View>: View {
       }
       .buttonStyle(.borderless)
       .opacity(isHovering ? 1 : 0)
-      .help("Remove \(app.name) from the focus list")
-      .accessibilityLabel("Remove \(app.name)")
+      .help(
+        String(
+          format: String(
+            localized: "focusApps.remove", defaultValue: "Remove %@ from the focus list"
+          ),
+          app.name,
+        )
+      )
+      .accessibilityLabel(
+        String(
+          format: String(
+            localized: "focusApps.removeA11y", defaultValue: "Remove %@"
+          ),
+          app.name,
+        )
+      )
     }
     .contentShape(Rectangle())
     .onHover { hovering in
@@ -222,7 +245,7 @@ private struct SafariDomainsSection: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 6) {
-      Text("Restrict to specific websites")
+      Text(String(localized: "domains.header", defaultValue: "Restrict to specific websites"))
         .font(.system(.caption, design: .rounded).weight(.medium))
         .foregroundStyle(.secondary)
 
@@ -233,11 +256,14 @@ private struct SafariDomainsSection: View {
       }
 
       HStack(spacing: 8) {
-        TextField("example.com", text: $newDomain)
-          .textFieldStyle(.roundedBorder)
-          .font(.system(.body, design: .rounded))
-          .onSubmit(addTypedDomain)
-        Button("Add", action: addTypedDomain)
+        TextField(
+          String(localized: "domains.placeholder", defaultValue: "example.com"),
+          text: $newDomain,
+        )
+        .textFieldStyle(.roundedBorder)
+        .font(.system(.body, design: .rounded))
+        .onSubmit(addTypedDomain)
+        Button(String(localized: "domains.add", defaultValue: "Add"), action: addTypedDomain)
           .disabled(newDomain.trimmingCharacters(in: .whitespaces).isEmpty)
       }
 
@@ -263,24 +289,41 @@ private struct SafariDomainsSection: View {
         ProgressView()
           .controlSize(.small)
       } else {
-        Label("Add Current Tab's Domain", systemImage: "safari")
+        Label(
+          String(
+            localized: "domains.addCurrent",
+            defaultValue: "Add Current Tab's Domain"
+          ),
+          systemImage: "safari",
+        )
       }
     }
     .buttonStyle(.borderless)
     .foregroundStyle(Theme.tomatoRed)
     .disabled(isCapturing || !SafariTabQuery.isSupported)
-    .accessibilityHint("Adds the domain of the tab currently open in Safari.")
-    .alert("Allow Safari Tab Access?", isPresented: $showPrimerAlert) {
-      Button("Continue") {
+    .accessibilityHint(
+      String(
+        localized: "domains.addCurrentHint",
+        defaultValue: "Adds the domain of the tab currently open in Safari."
+      )
+    )
+    .alert(
+      String(
+        localized: "domains.primerTitle",
+        defaultValue: "Allow Safari Tab Access?"
+      ),
+      isPresented: $showPrimerAlert,
+    ) {
+      Button(String(localized: "domains.primerContinue", defaultValue: "Continue")) {
         hasShownPrimer = true
         captureCurrentTab()
       }
-      Button("Cancel", role: .cancel) {}
+      Button(String(localized: "skip.confirm.cancel", defaultValue: "Cancel"), role: .cancel) {}
     } message: {
-      Text(
-        "PomodoroBar needs permission to check Safari's current tab. "
-        + "You'll see a system prompt next — click OK to allow it."
-      )
+      Text(String(
+        localized: "domains.primerMessage",
+        defaultValue: "PomodoroBar needs permission to check Safari's current tab. You'll see a system prompt next — click OK to allow it."
+      ))
     }
   }
 
@@ -288,9 +331,17 @@ private struct SafariDomainsSection: View {
     HStack(spacing: 4) {
       Image(systemName: "exclamationmark.triangle.fill")
         .foregroundStyle(.orange)
-      Text("Automation access denied.")
+      Text(
+        String(
+          localized: "domains.automationDenied",
+          defaultValue: "Automation access denied."
+        )
+      )
         .foregroundStyle(.secondary)
-      Button("Open Settings…", action: openAutomationSettings)
+      Button(
+        String(localized: "domains.openSettings", defaultValue: "Open Settings…"),
+        action: openAutomationSettings,
+      )
         .buttonStyle(.link)
     }
     .font(.system(.caption, design: .rounded))
@@ -346,8 +397,22 @@ private struct DomainRow: View {
       }
       .buttonStyle(.borderless)
       .opacity(isHovering ? 1 : 0)
-      .help("Remove \(domain)")
-      .accessibilityLabel("Remove \(domain)")
+      .help(
+        String(
+          format: String(
+            localized: "domain.remove", defaultValue: "Remove %@"
+          ),
+          domain,
+        )
+      )
+      .accessibilityLabel(
+        String(
+          format: String(
+            localized: "domain.removeA11y", defaultValue: "Remove %@"
+          ),
+          domain,
+        )
+      )
     }
     .contentShape(Rectangle())
     .onHover { hovering in
