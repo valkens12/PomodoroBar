@@ -20,7 +20,7 @@ cask "pomodorobar" do
   name "PomodoroBar"
   desc "Quiet Pomodoro timer that lives in the menu bar"
   homepage "https://github.com/valkens12/PomodoroBar"
-  depends_on macos: ">= :sonoma"
+  depends_on macos: :sonoma
 
   app "PomodoroBar.app"
 
