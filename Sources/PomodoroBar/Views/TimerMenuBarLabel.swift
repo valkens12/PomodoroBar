@@ -13,9 +13,17 @@ import SwiftUI
 /// - Paused, or running-but-waiting-for-a-focus-app: dimmed, so the one
 ///   surface you see most of the time tells you at a glance whether the
 ///   countdown is actually moving without opening the popover.
+/// - Phase change (focus <-> break): a short squash-and-pop bounce while the
+///   body crossfades to the new phase's colors, driven frame-by-frame by
+///   `MenuBarTransitionAnimator` because the status item never runs implicit
+///   SwiftUI animations. The animator is triggered by the timer model's
+///   `onPhaseChange` (wired in `PomodoroBarApp`), not `.onChange` here —
+///   a `MenuBarExtra` label re-renders through observation but never
+///   receives view lifecycle events, so `.onChange` would never fire.
 struct TimerMenuBarLabel: View {
   let timer: PomodoroTimer
   let settings: AppSettings
+  let animator: MenuBarTransitionAnimator
 
   private var showsTime: Bool {
     timer.runState == .running || timer.runState == .paused
@@ -37,14 +45,14 @@ struct TimerMenuBarLabel: View {
       if showsTime {
         if settings.hideMenuBarTime {
           HStack(spacing: 3) {
-            tomatoImage(size: 16)
+            tomatoView(size: 16)
             if isDimmed {
               pauseGlyph
             }
           }
         } else {
           HStack(spacing: 4) {
-            tomatoImage(size: 12)
+            tomatoView(size: 12)
             if isDimmed {
               pauseGlyph
             }
@@ -54,11 +62,21 @@ struct TimerMenuBarLabel: View {
           }
         }
       } else {
-        tomatoImage(size: 16)
+        tomatoView(size: 16)
       }
     }
     .opacity(isDimmed ? 0.45 : 1.0)
     .accessibilityLabel(timer.accessibilityLabel)
+  }
+
+  /// The tomato at the given point size, carrying the phase-change bounce.
+  /// The scale/rotation are plain static transforms re-rendered each frame by
+  /// the animator's progress updates, which is what actually animates inside
+  /// a status item.
+  private func tomatoView(size: CGFloat) -> some View {
+    tomatoImage(size: size)
+      .scaleEffect(animator.scale)
+      .rotationEffect(.degrees(animator.wiggleDegrees))
   }
 
   /// The tomato at the given point size, honoring the monochrome preference.
@@ -68,22 +86,23 @@ struct TimerMenuBarLabel: View {
     if settings.monochromeMenuBarIcon {
       return Image(nsImage: MenuBarIcon.tomatoTemplate(size: size))
     } else {
-      return Image(nsImage: colorTomato(size: size))
+      let stops = animator.stops(target: steadyStops)
+      return Image(
+        nsImage: MenuBarIcon.tomato(
+          bright: stops.bright, deep: stops.deep, size: size
+        )
+      )
     }
   }
 
-  /// The color (non-template) tomato at the given point size. Pulled out so
-  /// `tomatoImage` has a simple two-branch body; the three call sites only
-  /// differ in which `MenuBarIcon.tomato` arguments to pass.
-  @MainActor
-  private func colorTomato(size: CGFloat) -> NSImage {
+  /// The body gradient stops the icon settles on outside a transition:
+  /// ripening when the countdown is hidden, phase-tinted while running, and
+  /// the ripe-red default when idle.
+  private var steadyStops: (bright: Color, deep: Color) {
     if showsTime, settings.hideMenuBarTime {
-      return MenuBarIcon.tomato(ripeness: ripeness, size: size)
-    } else if showsTime {
-      return MenuBarIcon.tomato(phase: timer.phase, size: size)
-    } else {
-      return MenuBarIcon.tomato(phase: nil, size: size)
+      return Theme.ripeStops(for: ripeness)
     }
+    return Theme.bodyStops(for: showsTime ? timer.phase : nil)
   }
 
   /// Explicit pause indicator alongside the dimming, so a suspended countdown

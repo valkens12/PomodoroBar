@@ -13,6 +13,7 @@ struct PomodoroBarApp: App {
   @State private var settings: AppSettings
   @State private var focusGuard: FocusGuard
   @State private var statistics: StatisticsStore
+  @State private var menuBarAnimator: MenuBarTransitionAnimator
 
   init() {
     // TEMPORARY diagnostic — exercised via
@@ -48,6 +49,15 @@ struct PomodoroBarApp: App {
     _focusGuard = State(initialValue: g)
     _statistics = State(initialValue: st)
     _timer = State(initialValue: t)
+
+    // The menu bar icon's phase-change animation. Triggered from the model
+    // because the MenuBarExtra label never receives `.onChange` (it only
+    // re-renders through observation).
+    let animator = MenuBarTransitionAnimator()
+    t.onPhaseChange = { oldPhase, _ in
+      animator.beginPhaseTransition(from: oldPhase)
+    }
+    _menuBarAnimator = State(initialValue: animator)
 
     // Route notification action buttons (Start / Skip on a phase-change
     // banner) into the timer. By the time the notification is posted the
@@ -87,7 +97,7 @@ struct PomodoroBarApp: App {
         .environment(focusGuard)
         .environment(statistics)
     } label: {
-      TimerMenuBarLabel(timer: timer, settings: settings)
+      TimerMenuBarLabel(timer: timer, settings: settings, animator: menuBarAnimator)
     }
     .menuBarExtraStyle(.window)
 

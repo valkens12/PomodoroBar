@@ -97,6 +97,13 @@ final class PomodoroTimer {
   /// itself carries no meaning beyond "something changed."
   private(set) var focusCompletionTick: Int = 0
 
+  /// Invoked on every phase transition (natural completion or skip), after
+  /// the new phase is in place. The menu bar label's phase-change animation
+  /// hangs off this rather than `.onChange`, because a `MenuBarExtra` label
+  /// never receives view lifecycle events — observation-driven re-renders
+  /// work there, but `onChange`/`onAppear`/`task` never fire.
+  @ObservationIgnored var onPhaseChange: ((_ from: Phase, _ to: Phase) -> Void)?
+
   @ObservationIgnored private var cancellable: AnyCancellable?
 
   /// Wall-clock timestamp of the previous tick, used to compute the real
@@ -351,6 +358,7 @@ final class PomodoroTimer {
 
     phase = nextPhase
     remainingTime = TimeInterval(settings.duration(for: nextPhase))
+    onPhaseChange?(leavingPhase, nextPhase)
 
     // Auto-start the next phase per user preferences.
     let shouldAutoStart: Bool

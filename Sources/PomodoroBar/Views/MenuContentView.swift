@@ -3,9 +3,10 @@ import SwiftUI
 
 /// The popover contents shown when the menu bar item is opened.
 ///
-/// Renders a tomato-themed popover on a real Liquid Glass panel
+/// Renders a tomato-themed popover on a real Liquid Glass panel on macOS 26
 /// (`.glassEffect()`, which adapts to light/dark automatically — no manual
-/// appearance pinning needed): a phase header, a progress ring wrapping a
+/// appearance pinning needed) and a standard material panel on earlier
+/// systems: a phase header, a progress ring wrapping a
 /// tomato with overlaid time, an optional "waiting for focus app" banner,
 /// session dots, prominent Start/Pause/Resume controls, secondary Reset/Skip
 /// controls, and a bottom row with a `SettingsLink` (the reliable way to open
@@ -58,7 +59,7 @@ struct MenuContentView: View {
     }
     .padding(20)
     .frame(width: popoverWidth)
-    .glassEffect(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    .popoverSurface()
   }
 
   // MARK: - Sections
@@ -563,6 +564,22 @@ struct MenuContentView: View {
       "play.fill"
     case .running:
       "pause.fill"
+    }
+  }
+}
+// MARK: - Popover Surface
+
+extension View {
+  /// The popover's backing panel: real Liquid Glass where the OS provides it
+  /// (macOS 26+), and the closest standard material on earlier systems so the
+  /// deployment target can stay at macOS 14.
+  @ViewBuilder
+  fileprivate func popoverSurface() -> some View {
+    let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+    if #available(macOS 26.0, *) {
+      glassEffect(in: shape)
+    } else {
+      background(.regularMaterial, in: shape)
     }
   }
 }

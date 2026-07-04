@@ -188,6 +188,27 @@ enum Theme {
   ) -> (Double, Double, Double) {
     (a.0 + (b.0 - a.0) * t, a.1 + (b.1 - a.1) * t, a.2 + (b.2 - a.2) * t)
   }
+
+  /// Linear sRGB blend from `a` (fraction 0) to `b` (fraction 1). Stands in
+  /// for `Color.mix(with:by:)`, which needs macOS 15 — the deployment target
+  /// is macOS 14. Colors that can't be converted to sRGB (never the case for
+  /// the literal palette colors this is used with) fall back to the nearer
+  /// endpoint.
+  static func mix(_ a: Color, _ b: Color, by fraction: Double) -> Color {
+    let t = min(max(fraction, 0), 1)
+    guard
+      let ca = NSColor(a).usingColorSpace(.sRGB),
+      let cb = NSColor(b).usingColorSpace(.sRGB)
+    else {
+      return t < 0.5 ? a : b
+    }
+    return Color(
+      red: ca.redComponent + (cb.redComponent - ca.redComponent) * t,
+      green: ca.greenComponent + (cb.greenComponent - ca.greenComponent) * t,
+      blue: ca.blueComponent + (cb.blueComponent - ca.blueComponent) * t,
+      opacity: ca.alphaComponent + (cb.alphaComponent - ca.alphaComponent) * t,
+    )
+  }
 }
 
 // MARK: - TomatoShape
@@ -324,24 +345,21 @@ struct TomatoCalyx: Shape {
 /// (menu bar) up to ~84pt (popover center).
 ///
 /// - `phase`: tint the body for a given Pomodoro phase (default ripe red).
-/// - `ripeness`: when set (0...1), overrides `phase` with a green->red ripening
-///   gradient — used by the menu bar icon when the countdown is hidden.
+/// - `bodyOverride`: explicit body stops that take precedence over `phase` —
+///   used by the menu bar icon for the ripening gradient and for blending
+///   between phase palettes during the phase-change animation.
 /// - `menuBarOptimized`: uses a brighter, higher-contrast body plus a thin dark
 ///   outline so the tomato reads on both light and dark menu bars.
 struct TomatoGlyph: View {
 
   var size: CGFloat
   var phase: PomodoroTimer.Phase? = nil
-  var ripeness: Double? = nil
+  var bodyOverride: (bright: Color, deep: Color)? = nil
   var menuBarOptimized: Bool = false
 
   var body: some View {
-    let stops: (bright: Color, deep: Color) = {
-      if let ripeness {
-        return Theme.ripeStops(for: ripeness)
-      }
-      return Theme.bodyStops(for: phase)
-    }()
+    let stops: (bright: Color, deep: Color) =
+      bodyOverride ?? Theme.bodyStops(for: phase)
     let calyxSize = size * 0.30
     let calyxLeafCount = size < 16 ? 3 : 5
 

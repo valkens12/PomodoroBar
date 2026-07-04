@@ -13,6 +13,7 @@
 		14F589C1DD97DC6381483F94 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BC75FF56E7C0D64B32461ED /* SettingsView.swift */; };
 		18D632EB091FFC6DDE20A6B0 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D03EBE9F94FD765423F6AEED /* InfoPlist.strings */; };
 		200E905A81777AE5B4FDB753 /* SafariTabQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 328656067D6775258F89DAF7 /* SafariTabQuery.swift */; };
+		311E00984DCB958C31BDBDE5 /* MenuBarTransitionAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 337C8342F56C064D12370815 /* MenuBarTransitionAnimator.swift */; };
 		31DBA9FC9ACBD55174B4EDAC /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5C14A4BC43B4FE8CE5CA4FC /* NotificationManager.swift */; };
 		45B1AD975A8324136F260C1E /* PomodoroBarApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F21B5FEAAA4CECD7D5E13CF /* PomodoroBarApp.swift */; };
 		4676785C2367ADC31510803B /* KeyCombo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7012950AA5433B8AB016A677 /* KeyCombo.swift */; };
@@ -39,6 +40,7 @@
 		0FB8159C4EF31C8D94FAD238 /* LoginItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginItem.swift; sourceTree = "<group>"; };
 		120C90DDAF3BCA54A95BEFA5 /* FocusGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusGuard.swift; sourceTree = "<group>"; };
 		328656067D6775258F89DAF7 /* SafariTabQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariTabQuery.swift; sourceTree = "<group>"; };
+		337C8342F56C064D12370815 /* MenuBarTransitionAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarTransitionAnimator.swift; sourceTree = "<group>"; };
 		3F78FE26159730E3BD2882C4 /* WindowActivation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowActivation.swift; sourceTree = "<group>"; };
 		4E3E64EE5B2228ED5007B617 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
 		57BBE5F6D1EB8679F762DAEC /* TimerMenuBarLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerMenuBarLabel.swift; sourceTree = "<group>"; };
@@ -88,6 +90,7 @@
 				7012950AA5433B8AB016A677 /* KeyCombo.swift */,
 				0FB8159C4EF31C8D94FAD238 /* LoginItem.swift */,
 				B398A58D8065C3AEB867214B /* MenuBarIcon.swift */,
+				337C8342F56C064D12370815 /* MenuBarTransitionAnimator.swift */,
 				C5C14A4BC43B4FE8CE5CA4FC /* NotificationManager.swift */,
 				328656067D6775258F89DAF7 /* SafariTabQuery.swift */,
 				770FDFBEBF785B219394F7E7 /* SoundManager.swift */,
@@ -235,6 +238,7 @@
 				4676785C2367ADC31510803B /* KeyCombo.swift in Sources */,
 				52AA2D07A1FE03F476B68505 /* LoginItem.swift in Sources */,
 				DC26D333E54EEE7D9E226616 /* MenuBarIcon.swift in Sources */,
+				311E00984DCB958C31BDBDE5 /* MenuBarTransitionAnimator.swift in Sources */,
 				846DFA6714E675C3B4705B5C /* MenuContentView.swift in Sources */,
 				31DBA9FC9ACBD55174B4EDAC /* NotificationManager.swift in Sources */,
 				45B1AD975A8324136F260C1E /* PomodoroBarApp.swift in Sources */,

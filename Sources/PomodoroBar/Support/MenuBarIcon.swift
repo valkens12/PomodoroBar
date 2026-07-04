@@ -10,16 +10,18 @@ import SwiftUI
 /// forcing monochrome template rendering.
 enum MenuBarIcon {
 
+  /// The tomato with explicit body gradient stops. The caller resolves the
+  /// stops (phase palette, ripening blend, or a mid-animation mix of the
+  /// two); this just rasterizes them.
   @MainActor
   static func tomato(
-    ripeness: Double? = nil,
-    phase: PomodoroTimer.Phase? = nil,
-    size: CGFloat = 16
+    bright: Color,
+    deep: Color,
+    size: CGFloat = 16,
   ) -> NSImage {
     let view = TomatoGlyph(
       size: size,
-      phase: phase,
-      ripeness: ripeness,
+      bodyOverride: (bright: bright, deep: deep),
       menuBarOptimized: true
     )
     return render(view, size: size, template: false)
