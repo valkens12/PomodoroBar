@@ -131,10 +131,12 @@ final class FocusGuard {
   @ObservationIgnored
   private var observerTokens: [NSObjectProtocol] = []
 
-  /// Mirrors `PomodoroTimer.runState == .running`, pushed in by
-  /// `setTimerRunning` — `FocusGuard` has no other way to learn this without
-  /// a circular dependency on `PomodoroTimer`, and polling must stop the
-  /// instant the timer isn't running.
+  /// Whether the timer is currently ticking in a phase that focus gating
+  /// applies to (a running focus phase), pushed in by `setTimerRunning` —
+  /// `FocusGuard` has no other way to learn this without a circular dependency
+  /// on `PomodoroTimer`. Breaks report `false` here so tab polling stops for
+  /// their duration; polling must also stop the instant the timer isn't
+  /// running.
   @ObservationIgnored
   private var timerIsRunning = false
 
@@ -241,9 +243,9 @@ final class FocusGuard {
     )
   }
 
-  /// Called by `PomodoroTimer` on every run-state transition (start, pause,
-  /// resume, reset, idle-after-phase-advance). Only running timers are worth
-  /// spending Apple Events on.
+  /// Called by `PomodoroTimer` on every run-state or phase transition (start,
+  /// pause, resume, reset, phase advance). `running` means "ticking in a
+  /// focus phase" — only then is it worth spending Apple Events on tab polling.
   func setTimerRunning(_ running: Bool) {
     guard timerIsRunning != running else { return }
     timerIsRunning = running

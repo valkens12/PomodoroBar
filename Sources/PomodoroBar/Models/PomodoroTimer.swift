@@ -171,19 +171,47 @@ final class PomodoroTimer {
 
   /// Why the countdown is currently held, if it is. See `FocusWaitReason`.
   var focusWaitReason: FocusWaitReason {
-    guard runState == .running, focusGuard.enabled, !focusGuard.isFocusAppActive else {
+    Self.focusWaitReason(
+      phase: phase,
+      runState: runState,
+      gatingEnabled: focusGuard.enabled,
+      isFocusAppActive: focusGuard.isFocusAppActive,
+      isTabMismatch: focusGuard.isTabMismatch,
+    )
+  }
+
+  /// Pure decision behind `focusWaitReason`, extracted so it can be tested
+  /// without a live `FocusGuard`/`NSWorkspace` (see `countableElapsed`).
+  ///
+  /// Focus gating applies **only during focus phases** — a break is meant to
+  /// run no matter what the user is doing, so it never waits on a focus app.
+  nonisolated static func focusWaitReason(
+    phase: Phase,
+    runState: RunState,
+    gatingEnabled: Bool,
+    isFocusAppActive: Bool,
+    isTabMismatch: Bool,
+  ) -> FocusWaitReason {
+    guard phase == .focus, runState == .running, gatingEnabled, !isFocusAppActive else {
       return .notWaiting
     }
-    return focusGuard.isTabMismatch ? .wrongTab : .wrongApp
+    return isTabMismatch ? .wrongTab : .wrongApp
   }
 
   // MARK: - Public Actions
+
+  /// Whether `FocusGuard` should be doing focus work (the Safari tab poll)
+  /// right now. Scoped to focus phases for the same reason as
+  /// `focusWaitReason`: breaks run un-gated, so there's nothing to poll for.
+  private var focusGuardShouldRun: Bool {
+    runState == .running && phase == .focus
+  }
 
   func start() {
     guard runState != .running else { return }
     runState = .running
     startTicker()
-    focusGuard.setTimerRunning(true)
+    focusGuard.setTimerRunning(focusGuardShouldRun)
   }
 
   func pause() {
@@ -197,7 +225,7 @@ final class PomodoroTimer {
     guard runState == .paused else { return }
     runState = .running
     startTicker()
-    focusGuard.setTimerRunning(true)
+    focusGuard.setTimerRunning(focusGuardShouldRun)
   }
 
   func toggleStartPause() {
@@ -376,7 +404,9 @@ final class PomodoroTimer {
       stopTicker()
       runState = .idle
     }
-    focusGuard.setTimerRunning(shouldAutoStart)
+    // Not `shouldAutoStart`: an auto-started *break* must not keep the guard
+    // polling. `focusGuardShouldRun` reflects the just-set phase + run state.
+    focusGuard.setTimerRunning(focusGuardShouldRun)
 
     // Sound routing: when a notification will be posted, the cue rides on the
     // notification itself (so it respects the user's per-app notification
