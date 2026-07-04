@@ -127,6 +127,14 @@ enum Theme {
 
   // MARK: - Surfaces
 
+  /// Desaturated grey body stops for the menu bar tomato while focus gating
+  /// holds the countdown. A flat grey (not just a dimmed phase tint) so the
+  /// always-visible icon reads unambiguously as "not counting down."
+  static let mutedStops: (bright: Color, deep: Color) = (
+    bright: Color(red: 0.66, green: 0.66, blue: 0.66),
+    deep: Color(red: 0.38, green: 0.38, blue: 0.38)
+  )
+
   /// Pair of radial-gradient stops for the tomato body, tinted per phase.
   /// Returns (bright, deep) where `bright` is the sun-lit upper-left and
   /// `deep` is the shaded edge.

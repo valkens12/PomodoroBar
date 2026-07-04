@@ -99,6 +99,13 @@ struct TimerMenuBarLabel: View {
   /// ripening when the countdown is hidden, phase-tinted while running, and
   /// the ripe-red default when idle.
   private var steadyStops: (bright: Color, deep: Color) {
+    // Focus gating is holding the countdown: grey the tomato so the always-
+    // visible icon reads as stopped, not merely a fainter red. Baked into the
+    // icon's color stops rather than a `.grayscale()` modifier, which a
+    // MenuBarExtra label won't reliably render.
+    if timer.isWaitingForFocusApp {
+      return Theme.mutedStops
+    }
     if showsTime, settings.hideMenuBarTime {
       return Theme.ripeStops(for: ripeness)
     }
