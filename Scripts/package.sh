@@ -55,7 +55,7 @@ echo "==> Compiling asset catalog..."
 xcrun actool "${PROJECT_ROOT}/Resources/Assets.xcassets" \
   --compile "${RESOURCES_DIR}" \
   --platform macosx \
-  --minimum-deployment-target 26.0 \
+  --minimum-deployment-target 14.0 \
   --output-format human-readable-text > /dev/null
 
 if [[ ! -f "${RESOURCES_DIR}/Assets.car" ]]; then

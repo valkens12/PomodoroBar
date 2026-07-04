@@ -2,7 +2,7 @@
 
 > A quiet Pomodoro timer that lives in your menu bar. Native macOS app, no Dock icon, no extra window — just a glance.
 
-Built with SwiftUI on the macOS 26 SDK with the Liquid Glass look. Single-target SwiftPM executable, zero third-party dependencies.
+Built with SwiftUI against the macOS 26 SDK, running on macOS 14 (Sonoma) or later — with the Liquid Glass look on macOS 26 and a standard material panel on older systems. Single-target SwiftPM executable, zero third-party dependencies.
 
 ## Install
 
@@ -37,8 +37,8 @@ xattr -cr /Applications/PomodoroBar.app
 
 ## Requirements
 
-- macOS 26
-- Swift 6 toolchain (Xcode targeting the macOS 26 SDK)
+- Running: macOS 14 (Sonoma) or later
+- Building: Swift 6 toolchain (Xcode targeting the macOS 26 SDK)
 
 ## Build & Run
 

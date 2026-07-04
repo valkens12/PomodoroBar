@@ -2,7 +2,7 @@ name: PomodoroBar
 options:
   bundleIdPrefix: com.pomodorobar
   deploymentTarget:
-    macOS: "26.0"
+    macOS: "14.0"
   developmentLanguage: en
   createIntermediateGroups: true
   groupSortPosition: top
@@ -21,7 +21,7 @@ targets:
   PomodoroBar:
     type: application
     platform: macOS
-    deploymentTarget: "26.0"
+    deploymentTarget: "14.0"
     sources:
       - path: Sources/PomodoroBar
       - path: Resources/Assets.xcassets
