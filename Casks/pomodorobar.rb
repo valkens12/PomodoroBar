@@ -1,9 +1,10 @@
 # Homebrew Cask template for PomodoroBar.
 #
-# This file lives in the source repo with __VERSION__ / __SHA256__ placeholders.
-# The release workflow (.github/workflows/release.yml) renders the real values
-# per published tag, attaches the filled cask to the GitHub Release, and pushes
-# it straight to the valkens12/homebrew-tap repo so users can:
+# This file lives in the source repo with placeholder version and sha256
+# fields below. The release workflow (.github/workflows/release.yml) renders
+# the real values per published tag, attaches the filled cask to the GitHub
+# Release, and pushes it straight to the valkens12/homebrew-tap repo so users
+# can:
 #
 #   brew tap valkens12/tap
 #   brew install --cask pomodorobar
