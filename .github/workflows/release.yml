@@ -1,10 +1,13 @@
 name: release
 
 # Builds PomodoroBar.app on every published version tag (v1.2.3), zips it,
-# renders the Homebrew Cask with the real version + sha256, and publishes a
-# GitHub Release with both assets attached. The app is ad-hoc signed only
-# (not notarized) -- see Casks/pomodorobar.rb caveats for the Gatekeeper
-# bypass users run once on first launch.
+# renders the Homebrew Cask with the real version + sha256, publishes a
+# GitHub Release with both assets attached, and pushes the rendered cask
+# straight to the valkens12/homebrew-tap repo (needs the TAP_REPO_TOKEN
+# secret -- a fine-grained PAT scoped to homebrew-tap with Contents:
+# read/write). The app is ad-hoc signed only (not notarized) -- see
+# Casks/pomodorobar.rb caveats for the Gatekeeper bypass users run once on
+# first launch.
 
 on:
   push:
@@ -70,3 +73,26 @@ jobs:
             "pomodorobar.rb" \
             --title "PomodoroBar ${VERSION}" \
             --generate-notes
+
+      - name: Check out homebrew-tap
+        uses: actions/checkout@v4
+        with:
+          repository: valkens12/homebrew-tap
+          token: ${{ secrets.TAP_REPO_TOKEN }}
+          path: homebrew-tap
+
+      - name: Publish cask to homebrew-tap
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          cp pomodorobar.rb homebrew-tap/Casks/pomodorobar.rb
+          cd homebrew-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/pomodorobar.rb
+          if git diff --cached --quiet; then
+            echo "Cask unchanged, nothing to push"
+            exit 0
+          fi
+          git commit -m "chore: update pomodorobar to ${VERSION}"
+          git push

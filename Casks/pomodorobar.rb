@@ -2,8 +2,8 @@
 #
 # This file lives in the source repo with __VERSION__ / __SHA256__ placeholders.
 # The release workflow (.github/workflows/release.yml) renders the real values
-# per published tag and attaches the filled cask to the GitHub Release. Copy the
-# rendered cask into your tap repo (e.g. valkens12/homebrew-tap) so users can:
+# per published tag, attaches the filled cask to the GitHub Release, and pushes
+# it straight to the valkens12/homebrew-tap repo so users can:
 #
 #   brew tap valkens12/tap
 #   brew install --cask pomodorobar
