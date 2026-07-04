@@ -16,8 +16,10 @@ permissions:
 
 jobs:
   release:
-    # macOS 26 SDK is required (the app targets deployment .v26). If GitHub
-    # hasn't rolled out a macos-26 runner yet, switch to macos-15 and add a
+    # The macOS 26 SDK is required to compile the Liquid Glass code path
+    # (deployment target is .v14 -- see Package.swift -- but the SDK used to
+    # build must still be 26 for those APIs to resolve). If GitHub hasn't
+    # rolled out a macos-26 runner yet, switch to macos-15 and add a
     # maxim-lobanov/setup-xcode@v1 step with xcode-version: '26'.
     runs-on: macos-26
     steps:
