@@ -1,0 +1,36 @@
+#!/bin/bash
+# pre-commit -- block a real Apple signing identity from reaching the public
+# repo. Only the local App Store archive (Scripts/archive-mas.sh) may carry the
+# Team ID; it is injected from the environment and must never be committed.
+#
+# Scoped to the files Xcode actually writes signing settings into (pbxproj,
+# entitlements, xcconfig, project.yml), so example placeholders in scripts and
+# docs don't trip it.
+#
+# This hook is version-controlled. Activate it once per clone with:
+#   git config core.hooksPath Scripts/git-hooks
+set -euo pipefail
+
+files="$(git diff --cached --name-only --diff-filter=d \
+  | grep -E '\.(pbxproj|entitlements|xcconfig)$|(^|/)project\.yml$' || true)"
+
+leak=""
+for f in ${files}; do
+  hit="$(git diff --cached -U0 -- "${f}" \
+    | grep -E '^\+' \
+    | grep -Ei 'DEVELOPMENT_TEAM[[:space:]]*[=:][[:space:]]*"?[A-Z0-9]{10}"?|PROVISIONING_PROFILE' \
+    || true)"
+  if [[ -n "${hit}" ]]; then
+    leak+="${f}:"$'\n'"${hit}"$'\n'
+  fi
+done
+
+if [[ -n "${leak}" ]]; then
+  echo "BLOCKED: a signing identity is staged in a tracked project file:" >&2
+  printf '%s' "${leak}" >&2
+  echo >&2
+  echo "Keep DEVELOPMENT_TEAM empty in tracked files. Inject the team only at" >&2
+  echo "archive time via Scripts/archive-mas.sh. If this is a false positive," >&2
+  echo "commit with --no-verify." >&2
+  exit 1
+fi

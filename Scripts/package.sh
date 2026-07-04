@@ -73,8 +73,13 @@ done
 shopt -u nullglob
 
 echo "==> Code signing..."
+# The direct build must carry the automation.apple-events entitlement: with the
+# hardened runtime enabled (--options runtime), in-process Apple Events to
+# Safari are blocked without it. No sandbox here — that is the App Store build.
 CODESIGN_IDENTITY="${CODESIGN_IDENTITY:--}"
+ENTITLEMENTS="${PROJECT_ROOT}/PomodoroBar-Direct.entitlements"
 codesign --force --deep --options runtime --timestamp=none \
+  --entitlements "${ENTITLEMENTS}" \
   --sign "${CODESIGN_IDENTITY}" "${APP_DIR}"
 codesign --verify --deep --strict "${APP_DIR}"
 

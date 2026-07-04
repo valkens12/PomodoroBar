@@ -7,6 +7,15 @@ options:
   createIntermediateGroups: true
   groupSortPosition: top
 
+# Debug/Release build the direct (Homebrew) app: no sandbox, automation
+# entitlement only. Release-MAS builds the App Store app: sandbox on. The only
+# difference between channels is the entitlements file (wired per-config on the
+# target below) and the signing identity supplied at archive/export time.
+configs:
+  Debug: debug
+  Release: release
+  Release-MAS: release
+
 settings:
   base:
     SWIFT_VERSION: "6.0"
@@ -16,6 +25,18 @@ settings:
     CODE_SIGN_STYLE: Automatic
     ENABLE_HARDENED_RUNTIME: YES
     LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks"
+
+schemes:
+  PomodoroBar:
+    build:
+      targets:
+        PomodoroBar: all
+    run:
+      config: Release
+    # Archiving defaults to the sandboxed App Store config. The team ID is
+    # injected at archive time by Scripts/archive-mas.sh, never stored here.
+    archive:
+      config: Release-MAS
 
 targets:
   PomodoroBar:
@@ -42,6 +63,9 @@ targets:
         INFOPLIST_FILE: Resources/Info.plist
         PRODUCT_BUNDLE_IDENTIFIER: com.archiet4.pomodorobar
         PRODUCT_NAME: PomodoroBar
-        CODE_SIGN_ENTITLEMENTS: PomodoroBar.entitlements
+        CODE_SIGN_ENTITLEMENTS: PomodoroBar-Direct.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: ""
+      configs:
+        Release-MAS:
+          CODE_SIGN_ENTITLEMENTS: PomodoroBar-MAS.entitlements

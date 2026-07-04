@@ -1,29 +1,48 @@
 import Foundation
 
 /// Queries Safari's frontmost tab URL via Apple Events, for tab-level focus
-/// gating. Shells out to `/usr/bin/osascript` rather than using
-/// `NSAppleScript` in-process: the Apple Event round-trip can block for the
-/// full system timeout (Safari busy, asleep, or an unanswered Automation
-/// permission prompt on screen), and running that inside a subprocess keeps
-/// the block off every actor PomodoroBar cares about — not just MainActor.
-/// Deliberately not `@MainActor`.
+/// gating. Sends the event **in-process** with `NSAppleScript` (dispatched to
+/// a private serial queue so the synchronous round-trip never blocks any actor
+/// PomodoroBar cares about). In-process is mandatory under the App Sandbox:
+/// the entitlement check is applied to the *sending* process, so shelling out
+/// to `/usr/bin/osascript` — where the child, not us, is the sender — is denied
+/// under sandbox and rejected by App Review. The `with timeout` wrapper bounds
+/// the wait, so a busy or asleep Safari can't pin the worker thread. Both the
+/// sandboxed (Mac App Store) and hardened-runtime direct builds carry
+/// `com.apple.security.automation.apple-events`, so this one code path serves
+/// every distribution channel.
 enum SafariTabQuery {
   enum QueryError: Error {
     case notSupported
-    case processFailed(String)
+    case scriptFailed(String)
     case unparsableOutput
     case timedOut
     case automationDenied
   }
 
-  private static let script =
-    "tell application \"Safari\" to get URL of current tab of front window"
+  /// Wrapped in `with timeout` so the Apple Event send can't outlive the
+  /// worker thread: a hung Safari surfaces as an `errAETimeout` (-1712)
+  /// instead of blocking until the multi-minute system default.
+  private static let source = """
+    with timeout of 2 seconds
+      tell application "Safari" to get URL of current tab of front window
+    end timeout
+    """
+
+  /// AppleScript / Apple Event Manager result codes we branch on. Anything
+  /// else is folded into `.scriptFailed` and treated as fail-open by callers.
+  private static let errAEEventNotPermitted = -1743
+  private static let errAETimeout = -1712
+
+  /// Serial queue owning every `NSAppleScript` execution. `NSAppleScript` is
+  /// not thread-safe, so confining all runs to one queue (rather than an
+  /// arbitrary global-queue slot) keeps executions from overlapping.
+  private static let queryQueue = DispatchQueue(label: "com.archiet4.pomodorobar.safari-query")
 
   /// True when the process can plausibly send Apple Events at all. Mirrors
   /// `NotificationManager.isSupported` / `LoginItem.isSupported` — dev builds
-  /// via `swift run` have no bundle identifier and osascript's app-targeting
-  /// by name still works, but there is no point trying without a real bundle
-  /// since the whole feature is meaningless outside a packaged app.
+  /// via `swift run` have no bundle identifier, and the whole feature is
+  /// meaningless outside a packaged app.
   static var isSupported: Bool { Bundle.main.bundleIdentifier != nil }
 
   /// Returns the frontmost Safari tab's URL host (e.g. "learn.coursera.org"),
@@ -33,127 +52,60 @@ enum SafariTabQuery {
   static func currentTabHost() async -> Result<String, QueryError> {
     guard isSupported else { return .failure(.notSupported) }
 
-    let outcome = await runOsascript(script)
-    switch outcome {
+    switch await runAppleScript(source) {
     case .timedOut:
       return .failure(.timedOut)
-    case .failed(let stderr):
-      if stderr.contains("(-1743)") {
-        return .failure(.automationDenied)
-      }
-      return .failure(.processFailed(stderr))
-    case .succeeded(let stdout):
-      let trimmed = stdout.trimmingCharacters(in: .whitespacesAndNewlines)
-      guard let host = URLComponents(string: trimmed)?.host, !host.isEmpty else {
+    case .denied:
+      return .failure(.automationDenied)
+    case .failed(let message):
+      return .failure(.scriptFailed(message))
+    case .succeeded(let urlString):
+      guard let host = URLComponents(string: urlString)?.host, !host.isEmpty else {
         return .failure(.unparsableOutput)
       }
       return .success(host.lowercased())
     }
   }
 
-  // MARK: - Process plumbing
+  // MARK: - Apple Event plumbing
 
-  private enum ProcessOutcome {
+  private enum ScriptOutcome: Sendable {
     case succeeded(String)
     case failed(String)
     case timedOut
+    case denied
   }
 
-  /// Lets the cancellation handler reach the in-flight `Process` even though
-  /// it lives in a separate closure scope from where it's created — `Process`
-  /// itself isn't `Sendable`, but `.terminate()` is documented safe to call
-  /// from any thread, so a locked box around the reference is enough.
-  private final class ProcessBox: @unchecked Sendable {
-    private let lock = NSLock()
-    private var process: Process?
-
-    func set(_ process: Process) {
-      lock.lock()
-      defer { lock.unlock() }
-      self.process = process
-    }
-
-    func terminateIfRunning() {
-      lock.lock()
-      let process = self.process
-      lock.unlock()
-      if process?.isRunning == true {
-        process?.terminate()
-      }
-    }
-  }
-
-  /// The termination handler, the timeout block, and the `do/catch` around
-  /// `process.run()` can all race to resume the continuation; this wraps
-  /// "resume exactly once" as a `Sendable` reference type instead of a
-  /// captured local closure, which Swift 6 strict concurrency won't accept
-  /// crossing the multiple `@Sendable` closure boundaries here.
-  private final class ContinuationResumer: @unchecked Sendable {
-    private let lock = NSLock()
-    private var didResume = false
-    private let continuation: CheckedContinuation<ProcessOutcome, Never>
-
-    init(_ continuation: CheckedContinuation<ProcessOutcome, Never>) {
-      self.continuation = continuation
-    }
-
-    func callAsFunction(_ outcome: ProcessOutcome) {
-      lock.lock()
-      defer { lock.unlock() }
-      guard !didResume else { return }
-      didResume = true
-      continuation.resume(returning: outcome)
-    }
-  }
-
-  /// Runs `osascript -e <script>` off the caller's actor, racing it against a
-  /// fixed timeout and terminating the process if the surrounding Task is
-  /// cancelled (e.g. the user switched away from Safari mid-poll) so a hung
-  /// Safari doesn't leave zombie osascript processes behind.
-  private static func runOsascript(_ script: String) async -> ProcessOutcome {
-    let box = ProcessBox()
-
-    return await withTaskCancellationHandler {
-      await withCheckedContinuation { (continuation: CheckedContinuation<ProcessOutcome, Never>) in
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
-        process.arguments = ["-e", script]
-
-        let stdoutPipe = Pipe()
-        let stderrPipe = Pipe()
-        process.standardOutput = stdoutPipe
-        process.standardError = stderrPipe
-
-        let resume = ContinuationResumer(continuation)
-
-        process.terminationHandler = { proc in
-          let stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
-          if proc.terminationStatus == 0 {
-            resume(.succeeded(String(data: stdoutData, encoding: .utf8) ?? ""))
-          } else {
-            let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
-            resume(.failed(String(data: stderrData, encoding: .utf8) ?? ""))
-          }
-        }
-
-        do {
-          try process.run()
-        } catch {
-          resume(.failed("\(error)"))
+  /// Compiles and runs `source` off the caller's actor on `queryQueue`. The
+  /// `NSAppleScript` instance is created and consumed entirely inside the
+  /// queue closure, so nothing non-`Sendable` crosses the continuation.
+  private static func runAppleScript(_ source: String) async -> ScriptOutcome {
+    await withCheckedContinuation { (continuation: CheckedContinuation<ScriptOutcome, Never>) in
+      queryQueue.async {
+        guard let script = NSAppleScript(source: source) else {
+          continuation.resume(returning: .failed("could not compile Safari query script"))
           return
         }
-        box.set(process)
 
-        // Timeout: a hung Safari or an unanswered TCC prompt could otherwise
-        // block indefinitely.
-        DispatchQueue.global().asyncAfter(deadline: .now() + 3) {
-          guard process.isRunning else { return }
-          process.terminate()
-          resume(.timedOut)
+        var errorInfo: NSDictionary?
+        let descriptor = script.executeAndReturnError(&errorInfo)
+
+        if let errorInfo {
+          let number = errorInfo[NSAppleScript.errorNumber] as? Int ?? 0
+          let message = errorInfo[NSAppleScript.errorMessage] as? String ?? "unknown AppleScript error"
+          switch number {
+          case errAEEventNotPermitted:
+            continuation.resume(returning: .denied)
+          case errAETimeout:
+            continuation.resume(returning: .timedOut)
+          default:
+            continuation.resume(returning: .failed("(\(number)) \(message)"))
+          }
+          return
         }
+
+        continuation.resume(returning: .succeeded(descriptor.stringValue ?? ""))
       }
-    } onCancel: {
-      box.terminateIfRunning()
     }
   }
 }
