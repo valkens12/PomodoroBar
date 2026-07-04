@@ -6,7 +6,6 @@
 # rendered cask into your tap repo (e.g. valkens12/homebrew-tap) so users can:
 #
 #   brew tap valkens12/tap
-#   brew trust valkens12/tap
 #   brew install --cask pomodorobar
 #
 # The app is ad-hoc signed and NOT notarized, so first launch needs a one-time
@@ -32,7 +31,7 @@ cask "pomodorobar" do
   caveats do
     <<~EOS
       PomodoroBar is ad-hoc signed and not notarized. On first launch macOS
-      Gatekeeper may block it. If so, run:
+      Gatekeeper will block it. This is a one-time step -- run:
 
           xattr -cr /Applications/PomodoroBar.app
 
