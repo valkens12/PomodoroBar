@@ -42,7 +42,17 @@ struct PomodoroBarApp: App {
 
     let s = AppSettings()
     let g = FocusGuard()
+    // POMO_DEMO_DATA=1 swaps in realistic, deterministic sample history —
+    // isolated to its own UserDefaults suite, never the real recorded
+    // history — for App Store screenshots and manual QA of the Statistics
+    // window. Debug-only; the env var does nothing in a shipped build.
+    #if DEBUG
+    let st = ProcessInfo.processInfo.environment["POMO_DEMO_DATA"] == "1"
+      ? StatisticsStore.demo()
+      : StatisticsStore()
+    #else
     let st = StatisticsStore()
+    #endif
     g.startMonitoring()
     let t = PomodoroTimer(settings: s, focusGuard: g, statistics: st)
     _settings = State(initialValue: s)

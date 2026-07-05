@@ -190,6 +190,20 @@
 "stats.last30Days"     = "Letzte 30 Tage";
 "stats.dayAxis"        = "Tag";
 "stats.minutesAxis"    = "Minuten";
+"stats.timeOfDay"      = "Tageszeit";
+"stats.timeOfDay.less" = "Weniger";
+"stats.timeOfDay.more" = "Mehr";
+"stats.timeOfDay.a11yEmpty" = "Heatmap der Fokuszeit. Noch keine Fokuszeit erfasst.";
+"stats.timeOfDay.a11yPeak"  = "Heatmap der Fokuszeit. Am meisten los gegen %1$@ an %2$@en, %3$@.";
+
+"stats.streak.title"        = "Serie";
+"stats.streak.unitSingular" = "Tag in Folge";
+"stats.streak.unitPlural"   = "Tage in Folge";
+"stats.streak.a11ySingular" = "%d Tag in Folge";
+"stats.streak.a11yPlural"   = "%d Tage in Folge";
+
+"stats.bestDay.title" = "Besttag";
+"stats.bestDay.none"  = "Noch keine Sitzungen";
 
 "stats.empty.title"    = "Noch keine Fokussitzungen";
 "stats.empty.body"     = "Starte die Tomate und schließe eine Fokussitzung ab, damit deine Statistik hier wächst.";
