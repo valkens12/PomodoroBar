@@ -154,17 +154,12 @@ struct FocusAppsTab: View {
     }
   }
 
-  /// Processes the file-importer result: on success, registers every picked
-  /// .app with the FocusGuard; on failure, logs and ignores.
   private func handlePick(_ result: Result<[URL], Error>) {
-    switch result {
-    case .success(let urls):
-      for url in urls {
-        focusGuard.add(url: url)
-      }
-    case .failure(let error):
-      // Non-fatal: the user cancelled or the URL was unreadable.
-      print("FocusAppsTab: file importer failed: \(error.localizedDescription)")
+    // A failure here means the user cancelled or the URL was unreadable;
+    // either way there is nothing to add and nothing to recover.
+    guard case .success(let urls) = result else { return }
+    for url in urls {
+      focusGuard.add(url: url)
     }
   }
 }

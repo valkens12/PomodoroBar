@@ -1,4 +1,3 @@
-import ServiceManagement
 import SwiftUI
 
 /// Window scene identifiers, shared between the scene declarations below and
@@ -21,30 +20,6 @@ struct PomodoroBarApp: App {
   @State private var summaryGenerator = StatisticsSummaryGenerator()
 
   init() {
-    // TEMPORARY diagnostic — exercised via
-    //   POMO_DEBUG_LOGINITEM=1 build/PomodoroBar.app/Contents/MacOS/PomodoroBar
-    // Remove once the launch-at-login investigation concludes.
-    if ProcessInfo.processInfo.environment["POMO_DEBUG_LOGINITEM"] != nil {
-      print("bundleId: \(Bundle.main.bundleIdentifier ?? "nil")")
-      print("bundleURL: \(Bundle.main.bundleURL.path)")
-      print("status before: \(SMAppService.mainApp.status.rawValue)")
-      do {
-        try SMAppService.mainApp.register()
-        print("register: OK")
-      } catch {
-        print("register error: \(error)")
-      }
-      print("status after register: \(SMAppService.mainApp.status.rawValue)")
-      do {
-        try SMAppService.mainApp.unregister()
-        print("unregister: OK")
-      } catch {
-        print("unregister error: \(error)")
-      }
-      print("status after unregister: \(SMAppService.mainApp.status.rawValue)")
-      exit(0)
-    }
-
     let s = AppSettings()
     let g = FocusGuard()
     // POMO_DEMO_DATA=1 swaps in realistic, deterministic sample history —
