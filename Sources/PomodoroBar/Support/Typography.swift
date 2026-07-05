@@ -14,7 +14,7 @@ import SwiftUI
 /// site picking its own point size independently.
 enum Typography {
   /// The mm:ss countdown inside the progress ring.
-  static let countdownDisplay = Font.system(size: 30, weight: .semibold, design: .rounded)
+  static let countdownDisplay = Font.system(size: 32, weight: .semibold, design: .rounded)
 
   /// Phase name in the popover header ("Focus", "Short Break"...).
   static let phaseTitle = Font.system(size: 15, weight: .semibold, design: .rounded)

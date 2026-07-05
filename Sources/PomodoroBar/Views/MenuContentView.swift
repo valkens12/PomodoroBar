@@ -42,27 +42,38 @@ struct MenuContentView: View {
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   var body: some View {
-    VStack(spacing: 16) {
+    VStack(spacing: 0) {
       phaseHeader
+        .padding(.bottom, 14)
 
-      ringWithTime
+      // Status cluster: ring, banner, dots, and today's summary all describe
+      // "where things stand right now", so they sit close together.
+      VStack(spacing: 12) {
+        ringWithTime
 
-      if timer.isWaitingForFocusApp {
-        waitingBanner
+        if timer.isWaitingForFocusApp {
+          waitingBanner
+        }
+
+        sessionDots
+
+        if statistics.todaySessions > 0 {
+          todaySummary
+        }
       }
+      .padding(.bottom, 20)
 
-      sessionDots
-
-      if statistics.todaySessions > 0 {
-        todaySummary
+      // Action cluster: the primary control and its secondary pair read as
+      // one group, set apart from the status cluster above.
+      VStack(spacing: 10) {
+        primaryControls
+        secondaryControls
       }
-
-      primaryControls
-
-      secondaryControls
+      .padding(.bottom, 16)
 
       Divider()
         .overlay(Theme.vineGreen.opacity(0.15))
+        .padding(.bottom, 14)
 
       bottomRow
     }
@@ -109,8 +120,8 @@ struct MenuContentView: View {
         .font(Typography.phaseTitle)
         .foregroundStyle(Theme.textColor(for: timer.phase))
         .contentTransition(.opacity)
-      Spacer()
     }
+    .frame(maxWidth: .infinity)
     .animation(.easeInOut(duration: 0.35), value: timer.phase)
     .accessibilityElement(children: .combine)
     .accessibilityLabel(
@@ -176,6 +187,10 @@ struct MenuContentView: View {
         .font(Typography.countdownDisplay)
         .monospacedDigit()
         .foregroundStyle(.primary)
+        .lineLimit(1)
+        // Focus durations run up to 120 minutes ("120:00", 6 characters),
+        // wider than the two-digit case this size was tuned for.
+        .minimumScaleFactor(0.75)
         // Digits roll over instead of snapping. `numericText` is a content
         // transition, so Reduce Motion is skipped explicitly like every other
         // flourish in this view.
@@ -371,11 +386,19 @@ struct MenuContentView: View {
     HStack(spacing: 6) {
       ForEach(0..<settings.sessionsBeforeLongBreak, id: \.self) { index in
         let isFilled = index < timer.completedFocusSessions
+        // The slot for the focus session in progress right now — distinct
+        // from both completed and not-yet-reached slots, so progress reads
+        // at a glance instead of just "done" vs. "not done".
+        let isCurrent = !isFilled && index == timer.completedFocusSessions && timer.phase == .focus
         let isJustFilled = index == timer.completedFocusSessions - 1
 
         Capsule()
-          .fill(isFilled ? Theme.tomatoRed : Theme.vineGreen.opacity(0.25))
-          .frame(width: 16, height: 4)
+          .fill(isFilled ? Theme.tomatoRed : Theme.vineGreen.opacity(0.3))
+          .overlay(
+            Capsule()
+              .strokeBorder(Theme.tomatoRed, lineWidth: isCurrent ? 1.5 : 0)
+          )
+          .frame(width: 16, height: 5)
           .scaleEffect(isJustFilled && celebrationPulse ? 1.3 : 1.0)
       }
     }
@@ -400,21 +423,17 @@ struct MenuContentView: View {
       openWindow(id: WindowId.statistics)
     } label: {
       HStack(spacing: 3) {
-        let unit = String(
-          localized: statistics.todaySessions == 1 ? "unit.session" : "unit.sessions",
-          defaultValue: statistics.todaySessions == 1 ? "session" : "sessions",
-        )
         Text(
           String(
             format: String(
               localized: statistics.todaySessions == 1
                 ? "todaySummary.singular" : "todaySummary.plural",
               defaultValue: statistics.todaySessions == 1
-                ? "Today: %1$lldm · %2$@ session"
-                : "Today: %1$lldm · %2$@ sessions"
+                ? "Today: %1$lldm · %2$lld session"
+                : "Today: %1$lldm · %2$lld sessions"
             ),
             locale: .current,
-            statistics.todayMinutes, unit,
+            statistics.todayMinutes, statistics.todaySessions,
           )
         )
         Image(systemName: "chevron.right")
@@ -492,10 +511,16 @@ struct MenuContentView: View {
       Button {
         timer.reset()
       } label: {
-        Label(
-          String(localized: "control.reset", defaultValue: "Reset"),
-          systemImage: "arrow.counterclockwise",
-        )
+        // Longer localizations (German "Zurücksetzen") don't fit next to
+        // Skip at this width, so fall back to the icon alone — the `.help`
+        // tooltip and accessibility label still carry the full word.
+        ViewThatFits(in: .horizontal) {
+          Label(
+            String(localized: "control.reset", defaultValue: "Reset"),
+            systemImage: "arrow.counterclockwise",
+          )
+          Image(systemName: "arrow.counterclockwise")
+        }
         .frame(maxWidth: .infinity)
       }
       .buttonStyle(.bordered)
@@ -515,10 +540,13 @@ struct MenuContentView: View {
           timer.skip()
         }
       } label: {
-        Label(
-          String(localized: "control.skip", defaultValue: "Skip"),
-          systemImage: "forward.fill",
-        )
+        ViewThatFits(in: .horizontal) {
+          Label(
+            String(localized: "control.skip", defaultValue: "Skip"),
+            systemImage: "forward.fill",
+          )
+          Image(systemName: "forward.fill")
+        }
         .frame(maxWidth: .infinity)
       }
       .buttonStyle(.bordered)

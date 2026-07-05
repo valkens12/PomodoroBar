@@ -55,8 +55,8 @@
 /* MARK: - Session dots & today summary (Views/MenuContentView.swift) */
 
 "dots.a11y"            = "Fortschritt: %1$lld von %2$lld Fokussitzungen abgeschlossen";
-"todaySummary.singular"= "Heute: %lld Min · %@ Sitzung";
-"todaySummary.plural"  = "Heute: %lld Min · %@ Sitzungen";
+"todaySummary.singular"= "Heute: %1$lld Min · %2$lld Sitzung";
+"todaySummary.plural"  = "Heute: %1$lld Min · %2$lld Sitzungen";
 "todaySummary.a11y"    = "Heute: %lld Fokusminuten, %lld Sitzungen";
 "todaySummary.hint"    = "Statistikfenster öffnen.";
 "todaySummary.help"    = "Fokusverlauf anzeigen";
