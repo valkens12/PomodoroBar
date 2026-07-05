@@ -140,7 +140,7 @@
 
 "support.header"      = "Unterstützen";
 "support.kofi.a11y"   = "Unterstütze mich auf Ko-fi (öffnet sich in deinem Browser)";
-"support.footer"      = "Wenn PomodoroBar dir hilft, dich zu konzentrieren, kannst du mir auf Ko-fi einen Kaffee spendieren. Völlig optional — es öffnet Ko-fi in deinem Browser.";
+"support.footer"      = "Wenn PomodoroBar dir hilft, dich zu konzentrieren, kannst du mir auf Ko-fi einen Kaffee spendieren. Völlig optional, aber ich freue mich ;)";
 
 /* MARK: - Unit labels (Views/SettingsView.swift) */
 

@@ -452,7 +452,7 @@ private struct GeneralTab: View {
     } footer: {
       Text(String(
         localized: "support.footer",
-        defaultValue: "If PomodoroBar helps you focus, you can buy me a coffee on Ko-fi. Totally optional, and it opens Ko-fi in your browser."
+        defaultValue: "If PomodoroBar helps you focus, you can buy me a coffee on Ko-fi. Totally optional!"
       ))
     }
   }
