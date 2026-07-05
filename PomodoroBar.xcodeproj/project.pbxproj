@@ -23,6 +23,7 @@
 		52AA2D07A1FE03F476B68505 /* LoginItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FB8159C4EF31C8D94FAD238 /* LoginItem.swift */; };
 		621E8FC28E438421C12FCCDA /* PomodoroTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8655384581F2660DEB9774F /* PomodoroTimer.swift */; };
 		650EC2C472F3A1FD8A130BD0 /* SoundManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 770FDFBEBF785B219394F7E7 /* SoundManager.swift */; };
+		6E96727C040660952B24BF00 /* RealisticTomatoGlyph.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5996437AA526E08A880CB7F /* RealisticTomatoGlyph.swift */; };
 		7124FA43A746954506931371 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = C6C988554E5222FC56FA64E8 /* Localizable.strings */; };
 		7462CE5B25D1D9AC9E0BFD73 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E3E64EE5B2228ED5007B617 /* Typography.swift */; };
 		7B483A16FB2FB5ACF472C3FD /* FocusGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 120C90DDAF3BCA54A95BEFA5 /* FocusGuard.swift */; };
@@ -68,6 +69,7 @@
 		B58802E619624BEEA5B838CE /* PomodoroBar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PomodoroBar.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BC3910F34B886C5FA61852FE /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		C01A2FE61A32E5E00C6E529E /* StatisticsSummaryGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatisticsSummaryGenerator.swift; sourceTree = "<group>"; };
+		C5996437AA526E08A880CB7F /* RealisticTomatoGlyph.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealisticTomatoGlyph.swift; sourceTree = "<group>"; };
 		C5C14A4BC43B4FE8CE5CA4FC /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		C6C988554E5222FC56FA64E8 /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Localizable.strings; path = de.lproj/Localizable.strings; sourceTree = "<group>"; };
 		C95F99CDE4FF7B2115572EFB /* FocusAppsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusAppsTab.swift; sourceTree = "<group>"; };
@@ -111,6 +113,7 @@
 				B398A58D8065C3AEB867214B /* MenuBarIcon.swift */,
 				337C8342F56C064D12370815 /* MenuBarTransitionAnimator.swift */,
 				C5C14A4BC43B4FE8CE5CA4FC /* NotificationManager.swift */,
+				C5996437AA526E08A880CB7F /* RealisticTomatoGlyph.swift */,
 				328656067D6775258F89DAF7 /* SafariTabQuery.swift */,
 				770FDFBEBF785B219394F7E7 /* SoundManager.swift */,
 				C01A2FE61A32E5E00C6E529E /* StatisticsSummaryGenerator.swift */,
@@ -271,6 +274,7 @@
 				31DBA9FC9ACBD55174B4EDAC /* NotificationManager.swift in Sources */,
 				45B1AD975A8324136F260C1E /* PomodoroBarApp.swift in Sources */,
 				621E8FC28E438421C12FCCDA /* PomodoroTimer.swift in Sources */,
+				6E96727C040660952B24BF00 /* RealisticTomatoGlyph.swift in Sources */,
 				200E905A81777AE5B4FDB753 /* SafariTabQuery.swift in Sources */,
 				14F589C1DD97DC6381483F94 /* SettingsView.swift in Sources */,
 				650EC2C472F3A1FD8A130BD0 /* SoundManager.swift in Sources */,

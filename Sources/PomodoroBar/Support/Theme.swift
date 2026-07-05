@@ -158,6 +158,37 @@ enum Theme {
     }
   }
 
+  /// Four-stop radial-gradient body for the realistic popover tomato: a
+  /// bright highlight, sun-lit skin, the mid body, and the deepest shaded
+  /// edge. The middle two stops land on the same colors as `bodyStops(for:)`
+  /// — this just adds the extra depth a larger, more detailed glyph can
+  /// carry.
+  static func realisticBodyStops(for phase: PomodoroTimer.Phase) -> [Color] {
+    switch phase {
+    case .focus:
+      return [
+        Color(red: 1.00, green: 0.84, blue: 0.60),
+        Color(red: 1.00, green: 0.55, blue: 0.28),
+        tomatoRed,
+        Color(red: 0.48, green: 0.08, blue: 0.05),
+      ]
+    case .shortBreak:
+      return [
+        Color(red: 0.85, green: 0.96, blue: 0.69),
+        Color(red: 0.62, green: 0.88, blue: 0.45),
+        Color(red: 0.30, green: 0.55, blue: 0.20),
+        Color(red: 0.11, green: 0.23, blue: 0.08),
+      ]
+    case .longBreak:
+      return [
+        Color(red: 0.73, green: 0.85, blue: 0.75),
+        Color(red: 0.45, green: 0.70, blue: 0.45),
+        Color(red: 0.22, green: 0.39, blue: 0.34),
+        Color(red: 0.07, green: 0.15, blue: 0.12),
+      ]
+    }
+  }
+
   /// Tomato-body stops for a "ripening" tomato: unripe green at 0, passing
   /// through orange around 0.5, to ripe red at 1. Used by the menu bar icon
   /// when the user hides the countdown — the tomato ripens as the session

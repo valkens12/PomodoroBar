@@ -4,7 +4,8 @@ import SwiftUI
 ///
 /// The ring is filled with a phase-specific tomato-plant gradient drawn over
 /// a faint vine-green track, rotated so progress depletes clockwise. A
-/// `TomatoGlyph` sits in the center so the ring appears to wrap the tomato.
+/// `RealisticTomatoGlyph` sits in the center so the ring appears to wrap the
+/// tomato.
 struct CircularProgressView: View {
   let progress: Double
   let phase: PomodoroTimer.Phase
@@ -72,10 +73,10 @@ struct CircularProgressView: View {
   @ViewBuilder
   private var tomatoGlyph: some View {
     if reduceMotion {
-      TomatoGlyph(size: glyphSize, phase: phase)
+      RealisticTomatoGlyph(size: glyphSize, phase: phase)
     } else {
       PhaseAnimator(TomatoPop.phases, trigger: startTick) { popPhase in
-        TomatoGlyph(size: glyphSize, phase: phase)
+        RealisticTomatoGlyph(size: glyphSize, phase: phase)
           .scaleEffect(CGSize(width: popPhase.scaleX, height: popPhase.scaleY))
       } animation: { popPhase in
         popPhase.animation
