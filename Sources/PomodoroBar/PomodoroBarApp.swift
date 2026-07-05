@@ -63,9 +63,9 @@ struct PomodoroBarApp: App {
         animator.beginPhaseTransition(from: oldPhase)
       }
     }
-    animator.onNudge = { incoming in
+    animator.onNudge = { _ in
       if s.soundEnabled {
-        SoundManager.playAlarm(for: incoming)
+        SoundManager.playAlarm()
       }
     }
     _menuBarAnimator = State(initialValue: animator)

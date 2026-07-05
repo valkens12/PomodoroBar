@@ -25,6 +25,7 @@ swift build -c release
 RELEASE_BIN="${PROJECT_ROOT}/.build/release/${APP_NAME}"
 INFO_PLIST="${PROJECT_ROOT}/Resources/Info.plist"
 APP_ICON="${PROJECT_ROOT}/Resources/AppIcon.icns"
+ALARM_SOUND="${PROJECT_ROOT}/Resources/harp_alarm.wav"
 
 if [[ ! -f "${RELEASE_BIN}" ]]; then
   echo "error: release executable not found at ${RELEASE_BIN}" >&2
@@ -38,6 +39,10 @@ if [[ ! -f "${APP_ICON}" ]]; then
   echo "error: AppIcon.icns not found at ${APP_ICON} (run ./Scripts/generate-icon.sh)" >&2
   exit 1
 fi
+if [[ ! -f "${ALARM_SOUND}" ]]; then
+  echo "error: harp_alarm.wav not found at ${ALARM_SOUND}" >&2
+  exit 1
+fi
 
 echo "==> Assembling bundle at ${APP_DIR}..."
 rm -rf "${APP_DIR}"
@@ -46,6 +51,7 @@ mkdir -p "${MACOS_DIR}" "${RESOURCES_DIR}"
 cp "${RELEASE_BIN}" "${MACOS_DIR}/${APP_NAME}"
 cp "${INFO_PLIST}" "${CONTENTS_DIR}/Info.plist"
 cp "${APP_ICON}" "${RESOURCES_DIR}/AppIcon.icns"
+cp "${ALARM_SOUND}" "${RESOURCES_DIR}/harp_alarm.wav"
 chmod 755 "${MACOS_DIR}/${APP_NAME}"
 
 echo "==> Compiling asset catalog..."

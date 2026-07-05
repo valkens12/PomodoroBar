@@ -428,7 +428,7 @@ final class PomodoroTimer {
         )
       }
     } else if settings.soundEnabled {
-      SoundManager.playAlarm(for: nextPhase)
+      SoundManager.playAlarm()
     }
   }
 
