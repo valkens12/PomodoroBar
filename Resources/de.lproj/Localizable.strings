@@ -82,6 +82,7 @@
 
 "settings.tab.general"     = "Allgemein";
 "settings.tab.focusApps"   = "Fokus-Apps";
+"settings.version"         = "Version %@ (%@)";
 
 /* MARK: - Startup section (Views/SettingsView.swift) */
 

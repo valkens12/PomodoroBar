@@ -17,24 +17,49 @@ struct SettingsView: View {
   @Environment(FocusGuard.self) private var focusGuard
 
   var body: some View {
-    TabView {
-      GeneralTab()
-        .tabItem {
-          Label(String(localized: "settings.tab.general", defaultValue: "General"),
-                systemImage: "timer")
-        }
+    VStack(spacing: 0) {
+      TabView {
+        GeneralTab()
+          .tabItem {
+            Label(String(localized: "settings.tab.general", defaultValue: "General"),
+                  systemImage: "timer")
+          }
 
-      FocusAppsTab()
-        .tabItem {
-          Label(String(localized: "settings.tab.focusApps", defaultValue: "Focus Apps"),
-                systemImage: "lock.shield")
-        }
+        FocusAppsTab()
+          .tabItem {
+            Label(String(localized: "settings.tab.focusApps", defaultValue: "Focus Apps"),
+                  systemImage: "lock.shield")
+          }
+      }
+      versionFooter
     }
     .frame(
       minWidth: 460, idealWidth: 520, maxWidth: 640,
       minHeight: 420, idealHeight: 480, maxHeight: 640,
     )
     .regularActivationWindow()
+  }
+
+  /// The running app's marketing + build version, shown outside the TabView
+  /// so it stays visible no matter which tab is selected — the one place in
+  /// Settings a user can confirm what they actually have installed, without
+  /// digging through Finder's Get Info or About This Mac-style lookups.
+  private var versionFooter: some View {
+    Text(Self.versionLabel)
+      .font(.caption)
+      .foregroundStyle(.secondary)
+      .padding(.vertical, 8)
+  }
+
+  private static var versionLabel: String {
+    let info = Bundle.main.infoDictionary
+    let version = info?["CFBundleShortVersionString"] as? String ?? "?"
+    let build = info?["CFBundleVersion"] as? String ?? "?"
+    return String(
+      format: String(localized: "settings.version", defaultValue: "Version %@ (%@)"),
+      locale: .current,
+      version, build,
+    )
   }
 }
 
