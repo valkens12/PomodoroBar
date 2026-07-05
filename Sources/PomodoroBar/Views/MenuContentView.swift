@@ -16,14 +16,23 @@ struct MenuContentView: View {
   @Environment(AppSettings.self) private var settings
   @Environment(FocusGuard.self) private var focusGuard
   @Environment(StatisticsStore.self) private var statistics
+  @Environment(MenuBarTransitionAnimator.self) private var animator
   @Environment(\.openWindow) private var openWindow
 
   private let popoverWidth: CGFloat = 270
   private let ringSize: CGFloat = 170
 
+  /// How long the playful message lingers in the ring before flipping back to
+  /// the countdown.
+  private let alarmMessageHold: Duration = .seconds(1.6)
+
   /// True for a brief moment right after a focus session completes, driving
   /// a scale + glow pulse on the ring and a bump on the just-filled dot.
   @State private var celebrationPulse = false
+
+  /// The playful line currently shown in the ring center (in place of the
+  /// time) after acknowledging a phase-change alarm; `nil` shows the time.
+  @State private var alarmMessage: String?
 
   /// Gates Skip behind a confirmation while a focus session is in flight —
   /// skipping discards the session unrecorded, so a single stray click
@@ -60,6 +69,32 @@ struct MenuContentView: View {
     .padding(20)
     .frame(width: popoverWidth)
     .popoverSurface()
+    .onAppear(perform: acknowledgeAlarmOnOpen)
+  }
+
+  /// Clicking the (rattling) tomato is the only way to silence the alarm, and
+  /// that click is what opened this popover. Acknowledge it, then flip the ring
+  /// center to a playful line for a beat before it flips back to the time.
+  private func acknowledgeAlarmOnOpen() {
+    guard animator.isAlarming else { return }
+    let incoming = animator.pendingMessagePhase ?? timer.phase
+    animator.acknowledgeAlarm()
+
+    withAnimation(flipAnimation) {
+      alarmMessage = AlarmMessages.random(for: incoming)
+    }
+    Task {
+      try? await Task.sleep(for: alarmMessageHold)
+      withAnimation(flipAnimation) {
+        alarmMessage = nil
+      }
+    }
+  }
+
+  /// The flip is a motion flourish, so Reduce Motion downgrades it to a quick
+  /// crossfade (see `centerTransition`) on a shorter, gentler curve.
+  private var flipAnimation: Animation {
+    reduceMotion ? .easeInOut(duration: 0.2) : .easeInOut(duration: 0.45)
   }
 
   // MARK: - Sections
@@ -95,22 +130,14 @@ struct MenuContentView: View {
         isRunning: timer.isRunning
       )
 
-      VStack(spacing: 2) {
-        Text(timer.formattedRemaining)
-          .font(Typography.countdownDisplay)
-          .monospacedDigit()
-          .foregroundStyle(.primary)
-          // Digits roll over instead of snapping. `numericText` is a
-          // content transition, so Reduce Motion is skipped explicitly like
-          // every other flourish in this view.
-          .contentTransition(reduceMotion ? .identity : .numericText(countsDown: true))
-          .animation(.linear(duration: 0.2), value: timer.remainingSeconds)
-        Text(runStateLabel)
-          .font(Typography.stateCaption)
-          .foregroundStyle(.secondary)
-          .textCase(.uppercase)
-          .contentTransition(.opacity)
-          .animation(.easeInOut(duration: 0.2), value: runStateLabel)
+      ZStack {
+        if let alarmMessage {
+          alarmMessageCenter(alarmMessage)
+            .transition(centerTransition)
+        } else {
+          timeCenter
+            .transition(centerTransition)
+        }
       }
     }
     .frame(width: ringSize, height: ringSize)
@@ -140,6 +167,53 @@ struct MenuContentView: View {
         celebrationPulse = false
       }
     }
+  }
+
+  /// The default ring center: the live countdown plus the run-state caption.
+  private var timeCenter: some View {
+    VStack(spacing: 2) {
+      Text(timer.formattedRemaining)
+        .font(Typography.countdownDisplay)
+        .monospacedDigit()
+        .foregroundStyle(.primary)
+        // Digits roll over instead of snapping. `numericText` is a content
+        // transition, so Reduce Motion is skipped explicitly like every other
+        // flourish in this view.
+        .contentTransition(reduceMotion ? .identity : .numericText(countsDown: true))
+        .animation(.linear(duration: 0.2), value: timer.remainingSeconds)
+      Text(runStateLabel)
+        .font(Typography.stateCaption)
+        .foregroundStyle(.secondary)
+        .textCase(.uppercase)
+        .contentTransition(.opacity)
+        .animation(.easeInOut(duration: 0.2), value: runStateLabel)
+    }
+  }
+
+  /// The playful line shown in the ring for a beat after acknowledging an
+  /// alarm. Plain `.primary`, like `timeCenter`'s countdown it swaps places
+  /// with — the ring's arc and the tomato glyph already carry the phase
+  /// color, so the message doesn't need to repeat it, and every break phase
+  /// is some shade of green already, so any phase tint here just reads as
+  /// more green on top of the ring.
+  private func alarmMessageCenter(_ message: String) -> some View {
+    Text(message)
+      .font(.system(size: 24, weight: .bold, design: .rounded))
+      .multilineTextAlignment(.center)
+      .minimumScaleFactor(0.5)
+      .lineLimit(2)
+      .foregroundStyle(.primary)
+      .frame(width: ringSize - 44)
+  }
+
+  /// A card flip about the vertical axis — the message turns in as the time
+  /// turns out — downgraded to a plain crossfade under Reduce Motion.
+  private var centerTransition: AnyTransition {
+    guard !reduceMotion else { return .opacity }
+    return .asymmetric(
+      insertion: .modifier(active: CardFlip(angle: -90), identity: CardFlip(angle: 0)),
+      removal: .modifier(active: CardFlip(angle: 90), identity: CardFlip(angle: 0)),
+    )
   }
 
   /// Banner shown when the timer is running but the countdown is held —
@@ -567,6 +641,24 @@ struct MenuContentView: View {
     }
   }
 }
+// MARK: - Card flip
+
+/// A one-sided card flip: rotates content about the vertical axis and hides the
+/// back half, so a swapped pair reads as a single card turning over.
+private struct CardFlip: ViewModifier {
+  let angle: Double
+
+  func body(content: Content) -> some View {
+    content
+      .rotation3DEffect(
+        .degrees(angle),
+        axis: (x: 0, y: 1, z: 0),
+        perspective: 0.6,
+      )
+      .opacity(angle == 0 ? 1 : 0)
+  }
+}
+
 // MARK: - Popover Surface
 
 extension View {

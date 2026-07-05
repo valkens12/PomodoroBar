@@ -97,12 +97,14 @@ final class PomodoroTimer {
   /// itself carries no meaning beyond "something changed."
   private(set) var focusCompletionTick: Int = 0
 
-  /// Invoked on every phase transition (natural completion or skip), after
-  /// the new phase is in place. The menu bar label's phase-change animation
+  /// Invoked on every phase transition, after the new phase is in place.
+  /// `naturally` is true only when the countdown reached zero, so the app can
+  /// escalate a natural completion into the attention alarm while a manual
+  /// skip stays a quiet one-shot. The menu bar label's phase-change animation
   /// hangs off this rather than `.onChange`, because a `MenuBarExtra` label
   /// never receives view lifecycle events — observation-driven re-renders
   /// work there, but `onChange`/`onAppear`/`task` never fire.
-  @ObservationIgnored var onPhaseChange: ((_ from: Phase, _ to: Phase) -> Void)?
+  @ObservationIgnored var onPhaseChange: ((_ from: Phase, _ to: Phase, _ naturally: Bool) -> Void)?
 
   @ObservationIgnored private var cancellable: AnyCancellable?
 
@@ -386,7 +388,7 @@ final class PomodoroTimer {
 
     phase = nextPhase
     remainingTime = TimeInterval(settings.duration(for: nextPhase))
-    onPhaseChange?(leavingPhase, nextPhase)
+    onPhaseChange?(leavingPhase, nextPhase, completedNaturally)
 
     // Auto-start the next phase per user preferences.
     let shouldAutoStart: Bool
@@ -408,24 +410,25 @@ final class PomodoroTimer {
     // polling. `focusGuardShouldRun` reflects the just-set phase + run state.
     focusGuard.setTimerRunning(focusGuardShouldRun)
 
-    // Sound routing: when a notification will be posted, the cue rides on the
-    // notification itself (so it respects the user's per-app notification
-    // sound preferences); the in-process NSSound is the fallback for
-    // notification-less transitions.
-    let willNotify =
-      completedNaturally && settings.notificationsEnabled && NotificationManager.isSupported
-    if settings.soundEnabled, !willNotify {
-      SoundManager.playPhaseChange()
-    }
-
-    if willNotify {
-      NotificationManager.postPhaseChange(
-        finished: leavingPhase,
-        next: nextPhase,
-        nextMinutes: settings.duration(for: nextPhase) / 60,
-        autoStarted: shouldAutoStart,
-        withSound: settings.soundEnabled,
-      )
+    // Sound routing splits by how the phase ended:
+    //
+    // - Natural completion: the audible cue rides on the menu bar alarm's
+    //   nudges (wired in `PomodoroBarApp` via `onPhaseChange` +
+    //   `animator.onNudge`), so the notification is posted silently to avoid
+    //   doubling it up. The banner is still worth showing for its text/actions.
+    // - Manual skip: a single soft chime, no notification, no sustained alarm.
+    if completedNaturally {
+      if settings.notificationsEnabled, NotificationManager.isSupported {
+        NotificationManager.postPhaseChange(
+          finished: leavingPhase,
+          next: nextPhase,
+          nextMinutes: settings.duration(for: nextPhase) / 60,
+          autoStarted: shouldAutoStart,
+          withSound: false,
+        )
+      }
+    } else if settings.soundEnabled {
+      SoundManager.playAlarm(for: nextPhase)
     }
   }
 

@@ -52,10 +52,21 @@ struct PomodoroBarApp: App {
 
     // The menu bar icon's phase-change animation. Triggered from the model
     // because the MenuBarExtra label never receives `.onChange` (it only
-    // re-renders through observation).
+    // re-renders through observation). A natural completion escalates into the
+    // sustained attention alarm (repeating bounce + chime until the popover
+    // acknowledges it); a manual skip is just the one-shot bounce.
     let animator = MenuBarTransitionAnimator()
-    t.onPhaseChange = { oldPhase, _ in
-      animator.beginPhaseTransition(from: oldPhase)
+    t.onPhaseChange = { oldPhase, newPhase, naturally in
+      if naturally {
+        animator.beginAlarm(from: oldPhase, to: newPhase)
+      } else {
+        animator.beginPhaseTransition(from: oldPhase)
+      }
+    }
+    animator.onNudge = { incoming in
+      if s.soundEnabled {
+        SoundManager.playAlarm(for: incoming)
+      }
     }
     _menuBarAnimator = State(initialValue: animator)
 
@@ -96,6 +107,7 @@ struct PomodoroBarApp: App {
         .environment(settings)
         .environment(focusGuard)
         .environment(statistics)
+        .environment(menuBarAnimator)
     } label: {
       TimerMenuBarLabel(timer: timer, settings: settings, animator: menuBarAnimator)
     }

@@ -17,9 +17,11 @@ struct PopScaleTests {
     #expect(MenuBarTransitionAnimator.popScale(at: 1) == 1)
   }
 
-  @Test("squashes below 1 before the pop")
-  func anticipatorySquash() {
-    #expect(MenuBarTransitionAnimator.popScale(at: 0.15) < 1)
+  @Test("rises straight toward the pop, no anticipatory dip below 1")
+  func noAnticipation() {
+    for step in stride(from: 0.0, through: 0.45, by: 0.05) {
+      #expect(MenuBarTransitionAnimator.popScale(at: step) >= 1)
+    }
   }
 
   @Test("overshoots above 1 at the pop's peak")
@@ -38,32 +40,6 @@ struct PopScaleTests {
   func clamped() {
     #expect(MenuBarTransitionAnimator.popScale(at: -0.5) == 1)
     #expect(MenuBarTransitionAnimator.popScale(at: 1.5) == 1)
-  }
-}
-
-@Suite("Wiggle track")
-struct WiggleTests {
-  @Test("rests at 0 on both endpoints")
-  func endpoints() {
-    #expect(MenuBarTransitionAnimator.wiggleDegrees(at: 0) == 0)
-    #expect(MenuBarTransitionAnimator.wiggleDegrees(at: 1) == 0)
-  }
-
-  @Test("actually swings mid-animation")
-  func swings() {
-    let peak = (0...20)
-      .map { MenuBarTransitionAnimator.wiggleDegrees(at: Double($0) / 20) }
-      .map(abs)
-      .max() ?? 0
-    #expect(peak > 2)
-  }
-
-  @Test("decays: later swings are smaller than earlier ones")
-  func decays() {
-    // The sine's crests sit near t = 1/6 and t = 5/6 (sin(t·3π) extremes).
-    let early = abs(MenuBarTransitionAnimator.wiggleDegrees(at: 1.0 / 6.0))
-    let late = abs(MenuBarTransitionAnimator.wiggleDegrees(at: 5.0 / 6.0))
-    #expect(late < early)
   }
 }
 
@@ -109,13 +85,65 @@ struct PhaseChangeHookTests {
       focusGuard: FocusGuard(),
       statistics: StatisticsStore(),
     )
-    var transitions: [(from: PomodoroTimer.Phase, to: PomodoroTimer.Phase)] = []
-    timer.onPhaseChange = { transitions.append((from: $0, to: $1)) }
+    var transitions:
+      [(from: PomodoroTimer.Phase, to: PomodoroTimer.Phase, naturally: Bool)] = []
+    timer.onPhaseChange = { transitions.append((from: $0, to: $1, naturally: $2)) }
 
     timer.skip()
     timer.skip()
 
     #expect(transitions.map(\.from) == [.focus, .shortBreak])
     #expect(transitions.map(\.to) == [.shortBreak, .focus])
+    // Skips are manual, so the hook reports them as non-natural — that's what
+    // keeps them a one-shot bounce instead of the sustained alarm.
+    #expect(transitions.allSatisfy { !$0.naturally })
+  }
+}
+
+// MARK: - Attention alarm
+
+/// A natural completion escalates into a sustained alarm: the tomato nudges in
+/// bursts and the chime re-plays for the first several, until the popover
+/// acknowledges it.
+@Suite("Alarm mode")
+@MainActor
+struct AlarmModeTests {
+  @Test("begins ringing and remembers the phase being entered")
+  func begins() {
+    let animator = MenuBarTransitionAnimator()
+    animator.beginAlarm(from: .focus, to: .shortBreak)
+    defer { animator.acknowledgeAlarm() }
+    #expect(animator.isAlarming)
+    #expect(animator.pendingMessagePhase == .shortBreak)
+  }
+
+  @Test("acknowledging stops the alarm")
+  func acknowledges() {
+    let animator = MenuBarTransitionAnimator()
+    animator.beginAlarm(from: .focus, to: .shortBreak)
+    animator.acknowledgeAlarm()
+    #expect(!animator.isAlarming)
+  }
+
+  @Test("fires the first chime immediately, with the incoming phase")
+  func firstNudgeChimes() {
+    let animator = MenuBarTransitionAnimator()
+    var chimed: [PomodoroTimer.Phase] = []
+    animator.onNudge = { chimed.append($0) }
+    animator.beginAlarm(from: .shortBreak, to: .focus)
+    animator.acknowledgeAlarm()
+    #expect(chimed == [.focus])
+  }
+}
+
+@Suite("Nudge cadence")
+struct NudgeCadenceTests {
+  @Test("the chime plays for the first several bursts, then falls silent")
+  func audibleCap() {
+    let cap = MenuBarTransitionAnimator.maxAudibleNudges
+    #expect(MenuBarTransitionAnimator.shouldChime(nudgeIndex: 0))
+    #expect(MenuBarTransitionAnimator.shouldChime(nudgeIndex: cap - 1))
+    #expect(!MenuBarTransitionAnimator.shouldChime(nudgeIndex: cap))
+    #expect(!MenuBarTransitionAnimator.shouldChime(nudgeIndex: -1))
   }
 }

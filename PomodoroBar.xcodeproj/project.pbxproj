@@ -15,6 +15,7 @@
 		200E905A81777AE5B4FDB753 /* SafariTabQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 328656067D6775258F89DAF7 /* SafariTabQuery.swift */; };
 		311E00984DCB958C31BDBDE5 /* MenuBarTransitionAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 337C8342F56C064D12370815 /* MenuBarTransitionAnimator.swift */; };
 		31DBA9FC9ACBD55174B4EDAC /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5C14A4BC43B4FE8CE5CA4FC /* NotificationManager.swift */; };
+		3519F267BB5DF33EAF051D00 /* AlarmMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BF76E6E54CCAD5E5EAC2D1E /* AlarmMessages.swift */; };
 		45B1AD975A8324136F260C1E /* PomodoroBarApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F21B5FEAAA4CECD7D5E13CF /* PomodoroBarApp.swift */; };
 		4676785C2367ADC31510803B /* KeyCombo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7012950AA5433B8AB016A677 /* KeyCombo.swift */; };
 		52AA2D07A1FE03F476B68505 /* LoginItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FB8159C4EF31C8D94FAD238 /* LoginItem.swift */; };
@@ -46,6 +47,7 @@
 		57BBE5F6D1EB8679F762DAEC /* TimerMenuBarLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerMenuBarLabel.swift; sourceTree = "<group>"; };
 		5D7D2859042E0CF80098A40C /* CircularProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularProgressView.swift; sourceTree = "<group>"; };
 		6472C864E2936C1DD9BE9B1B /* StatisticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatisticsView.swift; sourceTree = "<group>"; };
+		6BF76E6E54CCAD5E5EAC2D1E /* AlarmMessages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmMessages.swift; sourceTree = "<group>"; };
 		7012950AA5433B8AB016A677 /* KeyCombo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyCombo.swift; sourceTree = "<group>"; };
 		770FDFBEBF785B219394F7E7 /* SoundManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundManager.swift; sourceTree = "<group>"; };
 		7BC75FF56E7C0D64B32461ED /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -86,6 +88,7 @@
 		362ADE62623BABB6BF879F90 /* Support */ = {
 			isa = PBXGroup;
 			children = (
+				6BF76E6E54CCAD5E5EAC2D1E /* AlarmMessages.swift */,
 				AC7BE46569CDAE86723980A1 /* HotkeyCenter.swift */,
 				7012950AA5433B8AB016A677 /* KeyCombo.swift */,
 				0FB8159C4EF31C8D94FAD238 /* LoginItem.swift */,
@@ -229,6 +232,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3519F267BB5DF33EAF051D00 /* AlarmMessages.swift in Sources */,
 				C44C9A3628E3FC2B3B5BCB7B /* AppSettings.swift in Sources */,
 				9D25777EA63C15D0FAB5A9EB /* CircularProgressView.swift in Sources */,
 				0A0E06E86B3012B7EF460D48 /* FocusAppsTab.swift in Sources */,

@@ -13,7 +13,7 @@ import SwiftUI
 /// - Paused, or running-but-waiting-for-a-focus-app: dimmed, so the one
 ///   surface you see most of the time tells you at a glance whether the
 ///   countdown is actually moving without opening the popover.
-/// - Phase change (focus <-> break): a short squash-and-pop bounce while the
+/// - Phase change (focus <-> break): a short pop-and-settle bounce while the
 ///   body crossfades to the new phase's colors, driven frame-by-frame by
 ///   `MenuBarTransitionAnimator` because the status item never runs implicit
 ///   SwiftUI animations. The animator is triggered by the timer model's
@@ -45,51 +45,65 @@ struct TimerMenuBarLabel: View {
       if showsTime {
         if settings.hideMenuBarTime {
           HStack(spacing: 3) {
-            tomatoView(size: 16)
+            tomatoImage(size: 16)
             if isDimmed {
               pauseGlyph
+            }
+            if animator.isAlarming {
+              alarmGlyph
             }
           }
         } else {
           HStack(spacing: 4) {
-            tomatoView(size: 12)
+            tomatoImage(size: 12)
             if isDimmed {
               pauseGlyph
+            }
+            if animator.isAlarming {
+              alarmGlyph
             }
             Text(timer.formattedRemaining)
               .font(Typography.menuBarCountdown)
               .monospacedDigit()
           }
         }
+      } else if animator.isAlarming {
+        HStack(spacing: 3) {
+          tomatoImage(size: 16)
+          alarmGlyph
+        }
       } else {
-        tomatoView(size: 16)
+        tomatoImage(size: 16)
       }
     }
     .opacity(isDimmed ? 0.45 : 1.0)
-    .accessibilityLabel(timer.accessibilityLabel)
-  }
-
-  /// The tomato at the given point size, carrying the phase-change bounce.
-  /// The scale/rotation are plain static transforms re-rendered each frame by
-  /// the animator's progress updates, which is what actually animates inside
-  /// a status item.
-  private func tomatoView(size: CGFloat) -> some View {
-    tomatoImage(size: size)
-      .scaleEffect(animator.scale)
-      .rotationEffect(.degrees(animator.wiggleDegrees))
+    .accessibilityLabel(
+      animator.isAlarming
+        ? String(
+          localized: "menubar.alarm",
+          defaultValue: "Pomodoro finished. Click to acknowledge.",
+        )
+        : timer.accessibilityLabel
+    )
   }
 
   /// The tomato at the given point size, honoring the monochrome preference.
   /// The template variant lets macOS tint the silhouette like its own status
-  /// items; the color variant keeps the ripening/phase tinting.
+  /// items; the color variant keeps the ripening/phase tinting. Both pass the
+  /// animator's current scale into the rasterizer so the phase-change bounce
+  /// is baked into the pixels — a `scaleEffect` applied out here, on top of
+  /// the already-rasterized `Image`, would be silently dropped by the status
+  /// item, which shows only the bitmap this produces.
   private func tomatoImage(size: CGFloat) -> Image {
     if settings.monochromeMenuBarIcon {
-      return Image(nsImage: MenuBarIcon.tomatoTemplate(size: size))
+      return Image(
+        nsImage: MenuBarIcon.tomatoTemplate(size: size, scale: animator.scale)
+      )
     } else {
       let stops = animator.stops(target: steadyStops)
       return Image(
         nsImage: MenuBarIcon.tomato(
-          bright: stops.bright, deep: stops.deep, size: size
+          bright: stops.bright, deep: stops.deep, size: size, scale: animator.scale,
         )
       )
     }
@@ -117,6 +131,16 @@ struct TimerMenuBarLabel: View {
   private var pauseGlyph: some View {
     Image(systemName: "pause.fill")
       .font(.system(size: 8, weight: .bold))
+  }
+
+  /// Static attention marker shown while the phase-change alarm is ringing, so
+  /// the "something happened, click me" signal survives Reduce Motion (which
+  /// drops the bounce). An SF Symbol, which a status item renders reliably,
+  /// unlike an arbitrary shape overlay.
+  private var alarmGlyph: some View {
+    Image(systemName: "bell.fill")
+      .font(.system(size: 9, weight: .bold))
+      .foregroundStyle(.red)
   }
 }
 

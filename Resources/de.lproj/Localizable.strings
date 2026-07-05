@@ -263,3 +263,19 @@
 "keycombo.special.rightArrow"     = "Pfeil rechts";
 "keycombo.special.upArrow"        = "Pfeil oben";
 "keycombo.special.downArrow"      = "Pfeil unten";
+
+/* MARK: - Alarm messages (Support/AlarmMessages.swift) */
+
+"alarm.focus.1" = "Ran ans Werk";
+"alarm.focus.2" = "Weiter geht's";
+"alarm.focus.3" = "Konzentration an";
+"alarm.focus.4" = "Auf geht's";
+
+"alarm.break.1" = "Raus an die Luft 🍅";
+"alarm.break.2" = "Bildschirm aus";
+"alarm.break.3" = "Streck dich mal";
+"alarm.break.4" = "Durchatmen";
+
+/* MARK: - Menu bar alarm (Views/TimerMenuBarLabel.swift) */
+
+"menubar.alarm" = "Pomodoro fertig. Zum Bestätigen klicken.";
