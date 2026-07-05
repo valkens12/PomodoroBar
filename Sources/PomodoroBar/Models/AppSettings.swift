@@ -34,6 +34,8 @@ final class AppSettings {
     static let globalHotkeyKeyCode = "globalHotkeyKeyCode"
     static let globalHotkeyModifiers = "globalHotkeyModifiers"
     static let monochromeMenuBarIcon = "monochromeMenuBarIcon"
+    static let aiSummaryEnabled = "aiSummaryEnabled"
+    static let aiSummaryDarkHumor = "aiSummaryDarkHumor"
   }
 
   // MARK: - Stored Properties
@@ -137,6 +139,29 @@ final class AppSettings {
     }
   }
 
+  /// When true, the Statistics window asks the on-device model
+  /// (`StatisticsSummaryGenerator`) for a motivational overview. Meaningless
+  /// on hardware where the feature is never shown (see
+  /// `StatisticsSummaryGenerator.isSupported`), but stored regardless so the
+  /// choice survives becoming true, e.g. after an OS upgrade or an Apple
+  /// Intelligence model download completing.
+  var aiSummaryEnabled: Bool {
+    didSet {
+      UserDefaults.standard.set(aiSummaryEnabled, forKey: Key.aiSummaryEnabled)
+    }
+  }
+
+  /// When true, the AI overview asks the on-device model for a sarcastic
+  /// roast instead of an encouraging pep talk. Purely cosmetic tone — the
+  /// underlying statistics are unaffected — and the model's own safety
+  /// guardrails have the final say regardless of this setting: if it
+  /// declines to be that mean, the card just quietly hides.
+  var aiSummaryDarkHumor: Bool {
+    didSet {
+      UserDefaults.standard.set(aiSummaryDarkHumor, forKey: Key.aiSummaryDarkHumor)
+    }
+  }
+
   // MARK: - Init
 
   init() {
@@ -194,10 +219,15 @@ final class AppSettings {
     } else {
       self.monochromeMenuBarIcon = false
     }
-    if defaults.object(forKey: Key.monochromeMenuBarIcon) != nil {
-      self.monochromeMenuBarIcon = defaults.bool(forKey: Key.monochromeMenuBarIcon)
+    if defaults.object(forKey: Key.aiSummaryEnabled) != nil {
+      self.aiSummaryEnabled = defaults.bool(forKey: Key.aiSummaryEnabled)
     } else {
-      self.monochromeMenuBarIcon = false
+      self.aiSummaryEnabled = true
+    }
+    if defaults.object(forKey: Key.aiSummaryDarkHumor) != nil {
+      self.aiSummaryDarkHumor = defaults.bool(forKey: Key.aiSummaryDarkHumor)
+    } else {
+      self.aiSummaryDarkHumor = false
     }
     if defaults.object(forKey: Key.globalHotkeyEnabled) != nil {
       self.globalHotkeyEnabled = defaults.bool(forKey: Key.globalHotkeyEnabled)
@@ -228,6 +258,8 @@ final class AppSettings {
     defaults.set(tickEnabled, forKey: Key.tickEnabled)
     defaults.set(hideMenuBarTime, forKey: Key.hideMenuBarTime)
     defaults.set(notificationsEnabled, forKey: Key.notificationsEnabled)
+    defaults.set(aiSummaryEnabled, forKey: Key.aiSummaryEnabled)
+    defaults.set(aiSummaryDarkHumor, forKey: Key.aiSummaryDarkHumor)
     defaults.set(globalHotkeyEnabled, forKey: Key.globalHotkeyEnabled)
     defaults.set(Int(globalHotkey.keyCode), forKey: Key.globalHotkeyKeyCode)
     defaults.set(Int(globalHotkey.carbonModifiers), forKey: Key.globalHotkeyModifiers)

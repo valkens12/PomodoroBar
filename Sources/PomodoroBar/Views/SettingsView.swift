@@ -96,6 +96,7 @@ private struct GeneralTab: View {
       cycleSection(settings: settings)
       automationSection(settings: settings)
       soundSection(settings: settings)
+      statisticsSection(settings: settings)
       supportSection
     }
     .formStyle(.grouped)
@@ -419,6 +420,44 @@ private struct GeneralTab: View {
         localized: "alerts.footer",
         defaultValue: "A notification makes the end of a session visible even when another app is full-screen. Sounds play for phase changes and focus ticks."
       ))
+    }
+  }
+
+  /// Only rendered on Apple Intelligence hardware — the toggle would be
+  /// dead weight everywhere else, since `StatisticsView` never shows the
+  /// card those machines can't generate anyway.
+  @ViewBuilder
+  private func statisticsSection(settings: AppSettings) -> some View {
+    if StatisticsSummaryGenerator.isSupported {
+      @Bindable var settings = settings
+      Section {
+        Toggle(isOn: $settings.aiSummaryEnabled) {
+          settingLabel(
+            String(localized: "statistics.aiSummary.toggle", defaultValue: "AI Overview"),
+            systemImage: "sparkles",
+            tint: Theme.tomatoOrange,
+          )
+        }
+        Toggle(isOn: $settings.aiSummaryDarkHumor) {
+          settingLabel(
+            String(
+              localized: "statistics.aiSummary.darkHumor.toggle",
+              defaultValue: "Dark Humor"
+            ),
+            systemImage: "flame.fill",
+            tint: Theme.tomatoRed,
+          )
+        }
+        .disabled(!settings.aiSummaryEnabled)
+      } header: {
+        Text(String(localized: "statistics.header", defaultValue: "Statistics"))
+      } footer: {
+        Text(String(
+          localized: "statistics.aiSummary.footer",
+          defaultValue:
+            "A short summary of your focus history, generated on-device using Apple Intelligence — nothing is sent off your Mac. Dark Humor swaps the pep talk for a sarcastic roast; Apple's own safety filters get the final say, so it may just decline and leave the card blank."
+        ))
+      }
     }
   }
 

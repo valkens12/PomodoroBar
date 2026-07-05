@@ -32,7 +32,22 @@ enum DemoStatisticsData {
       let hours = isWeekend ? [10] : [9, 11, 14]
       for (index, hour) in hours.enumerated() {
         let minutes = index.isMultiple(of: 2) ? 25 : 50
-        records.append(session(on: day, hour: hour, minutes: minutes, calendar: calendar))
+        // Weekday afternoons carry a little tracked procrastination (focus
+        // gating on, mind wandering after lunch), so the Procrastinated
+        // highlight card has something deterministic to show; mornings and
+        // weekends read as untracked sessions (gating off -> nil).
+        let procrastinationSeconds = !isWeekend && hour == 14
+          ? 60 * (1 + daysAgo % 4)
+          : nil
+        records.append(
+          session(
+            on: day,
+            hour: hour,
+            minutes: minutes,
+            procrastinationSeconds: procrastinationSeconds,
+            calendar: calendar,
+          ),
+        )
       }
 
       // A standout flow day, for the Best Day highlight.
@@ -50,10 +65,16 @@ enum DemoStatisticsData {
     on day: Date,
     hour: Int,
     minutes: Int,
+    procrastinationSeconds: Int? = nil,
     calendar: Calendar,
   ) -> FocusSessionRecord {
     let date = calendar.date(bySettingHour: hour, minute: 20, second: 0, of: day) ?? day
-    return FocusSessionRecord(id: UUID(), date: date, minutes: minutes)
+    return FocusSessionRecord(
+      id: UUID(),
+      date: date,
+      minutes: minutes,
+      procrastinationSeconds: procrastinationSeconds,
+    )
   }
 }
 #endif

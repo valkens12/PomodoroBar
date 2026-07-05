@@ -15,6 +15,11 @@ struct PomodoroBarApp: App {
   @State private var statistics: StatisticsStore
   @State private var menuBarAnimator: MenuBarTransitionAnimator
 
+  /// App-level (rather than per-window) so a finished summary survives the
+  /// Statistics window closing: reopening it with unchanged history shows
+  /// the cached text instead of re-running the on-device model.
+  @State private var summaryGenerator = StatisticsSummaryGenerator()
+
   init() {
     // TEMPORARY diagnostic — exercised via
     //   POMO_DEBUG_LOGINITEM=1 build/PomodoroBar.app/Contents/MacOS/PomodoroBar
@@ -135,6 +140,8 @@ struct PomodoroBarApp: App {
     Window("Statistics", id: WindowId.statistics) {
       StatisticsView()
         .environment(statistics)
+        .environment(summaryGenerator)
+        .environment(settings)
         .frame(
           minWidth: 480, idealWidth: 540, maxWidth: 680,
           minHeight: 460, idealHeight: 600, maxHeight: 760,

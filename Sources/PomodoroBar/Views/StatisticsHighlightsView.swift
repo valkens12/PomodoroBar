@@ -1,12 +1,16 @@
 import SwiftUI
 
-/// "Highlights" row: current streak and all-time best day, shown as a
-/// two-card strip beneath the Today/Week/Month summary cards. Both are
+/// "Highlights" row: current streak, all-time best day, and — when focus
+/// gating has tracked it — time procrastinated this week, shown as a card
+/// strip beneath the Today/Week/Month summary cards. Streak and best day are
 /// derived from full history (`StatisticsStore.currentStreak` / `.bestDay`),
-/// not the rolling windows the summary cards use.
+/// not the rolling windows the summary cards use; procrastination uses the
+/// 7-day window and hides entirely when no session was tracked
+/// (`StatisticsStore.weekProcrastinationMinutes`).
 struct StatisticsHighlightsView: View {
   let streak: Int
   let bestDay: DailyTotal?
+  let weekProcrastinationMinutes: Int?
 
   var body: some View {
     HStack(spacing: 12) {
@@ -26,6 +30,20 @@ struct StatisticsHighlightsView: View {
         valueA11yLabel: bestDay.map { accessibleFocusDuration($0.minutes) },
         subtitle: bestDaySubtitle,
       )
+      if let weekProcrastinationMinutes {
+        HighlightCard(
+          systemImage: "hourglass",
+          tint: .secondary,
+          title: String(
+            localized: "stats.procrastination.title", defaultValue: "Procrastinated",
+          ),
+          value: formattedFocusDuration(weekProcrastinationMinutes),
+          valueA11yLabel: procrastinationA11yLabel(weekProcrastinationMinutes),
+          subtitle: String(
+            localized: "stats.procrastination.subtitle", defaultValue: "this week",
+          ),
+        )
+      }
     }
   }
 
@@ -51,6 +69,22 @@ struct StatisticsHighlightsView: View {
       return String(localized: "stats.bestDay.none", defaultValue: "No sessions yet")
     }
     return bestDay.date.formatted(.dateTime.month(.abbreviated).day())
+  }
+
+  /// VoiceOver label for the procrastination value — `accessibleFocusDuration`
+  /// reads "… focus time", which is exactly wrong for this card.
+  private func procrastinationA11yLabel(_ minutes: Int) -> String {
+    String(
+      format: String(
+        localized: minutes == 1
+          ? "stats.procrastination.a11ySingular"
+          : "stats.procrastination.a11yPlural",
+        defaultValue: minutes == 1
+          ? "%d minute procrastinated this week"
+          : "%d minutes procrastinated this week",
+      ),
+      minutes,
+    )
   }
 }
 
@@ -103,6 +137,7 @@ private struct HighlightCard: View {
   StatisticsHighlightsView(
     streak: 5,
     bestDay: DailyTotal(id: Date(), date: Date(), minutes: 200),
+    weekProcrastinationMinutes: 34,
   )
   .padding()
 }

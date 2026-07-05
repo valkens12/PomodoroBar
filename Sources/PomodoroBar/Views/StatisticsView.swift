@@ -11,6 +11,7 @@ import SwiftUI
 /// Settings windows are for preferences.
 struct StatisticsView: View {
   @Environment(StatisticsStore.self) private var statistics
+  @Environment(AppSettings.self) private var settings
 
   /// Hovered/tapped day on each chart, used to drive a crosshair + value
   /// callout. Separate per chart since both are visible at once.
@@ -26,10 +27,21 @@ struct StatisticsView: View {
         if statistics.records.isEmpty {
           emptyState
         } else {
+          // On-device AI overview: gated on Apple Intelligence hardware
+          // (Apple Silicon + macOS 26) and the user's toggle in Settings —
+          // everywhere else the stats simply start at the summary cards,
+          // with no gap where the card would be.
+          if settings.aiSummaryEnabled, StatisticsSummaryGenerator.isSupported {
+            StatisticsSummaryView(
+              digest: statistics.summaryDigest,
+              darkHumor: settings.aiSummaryDarkHumor,
+            )
+          }
           summaryCards
           StatisticsHighlightsView(
             streak: statistics.currentStreak,
             bestDay: statistics.bestDay,
+            weekProcrastinationMinutes: statistics.weekProcrastinationMinutes,
           )
           sevenDayChart
           thirtyDayChart

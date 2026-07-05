@@ -136,6 +136,11 @@
 "alerts.tick"               = "Jede Sekunde ticken";
 "alerts.footer"             = "Eine Benachrichtigung macht das Ende einer Sitzung sichtbar, auch wenn eine andere App im Vollbildmodus ist. Sounds spielen bei Phasenwechseln und Fokus-Ticks.";
 
+"statistics.header"                   = "Statistik";
+"statistics.aiSummary.toggle"         = "KI-Übersicht";
+"statistics.aiSummary.darkHumor.toggle" = "Schwarzer Humor";
+"statistics.aiSummary.footer"         = "Eine kurze Zusammenfassung deines Fokusverlaufs, direkt auf dem Gerät mit Apple Intelligence erstellt — es wird nichts von deinem Mac gesendet. Schwarzer Humor tauscht die Aufmunterung gegen einen sarkastischen Verriss; Apples eigene Sicherheitsfilter entscheiden am Ende mit, die Karte kann also auch einfach leer bleiben.";
+
 /* MARK: - Support section (Views/SettingsView.swift) */
 
 "support.header"      = "Unterstützen";
@@ -204,6 +209,16 @@
 
 "stats.bestDay.title" = "Besttag";
 "stats.bestDay.none"  = "Noch keine Sitzungen";
+
+"stats.procrastination.title"       = "Prokrastiniert";
+"stats.procrastination.subtitle"    = "diese Woche";
+"stats.procrastination.a11ySingular"= "%d Minute diese Woche prokrastiniert";
+"stats.procrastination.a11yPlural"  = "%d Minuten diese Woche prokrastiniert";
+
+"stats.summary.title"       = "Deine Fokuswoche";
+"stats.summary.placeholder" = "Dein Fokusverlauf wird durchgesehen, um die Höhepunkte herauszusuchen und dich anzufeuern…";
+"stats.summary.title.darkHumor"       = "Die bittere Wahrheit";
+"stats.summary.placeholder.darkHumor" = "Die Beweise gegen dich werden gesichtet…";
 
 "stats.empty.title"    = "Noch keine Fokussitzungen";
 "stats.empty.body"     = "Starte die Tomate und schließe eine Fokussitzung ab, damit deine Statistik hier wächst.";

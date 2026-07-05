@@ -117,6 +117,14 @@ final class PomodoroTimer {
   /// than the user, so `didWakeNotification` knows to resume it.
   @ObservationIgnored private var pausedForSleep = false
 
+  /// Seconds the countdown has been held by focus gating during the current
+  /// focus session — every tick that early-returned in `tick()` because no
+  /// focus app (or the wrong Safari tab) was frontmost. Recorded into
+  /// `StatisticsStore` on natural completion while gating is configured,
+  /// and zeroed whenever the session it measured ends (phase advance or
+  /// reset).
+  @ObservationIgnored private var procrastinationTime: TimeInterval = 0
+
   @ObservationIgnored private var sleepObserverTokens: [NSObjectProtocol] = []
 
   // MARK: - Init
@@ -243,6 +251,7 @@ final class PomodoroTimer {
     stopTicker()
     runState = .idle
     remainingTime = TimeInterval(totalSeconds)
+    procrastinationTime = 0
     focusGuard.setTimerRunning(false)
   }
 
@@ -332,8 +341,10 @@ final class PomodoroTimer {
 
     // Focus gating: hold the countdown (and the tick sound) while waiting for a
     // focus app to become frontmost. Run state is unchanged so the UI can show
-    // a "paused — open a focus app" banner.
+    // a "paused — open a focus app" banner. Held time is what the statistics
+    // call procrastination, so it accumulates here.
     if isWaitingForFocusApp {
+      procrastinationTime += elapsed
       return
     }
 
@@ -363,11 +374,25 @@ final class PomodoroTimer {
       // still advance the session dots (the long-break cadence stays
       // predictable) but earn no statistics and no celebration.
       if completedNaturally {
-        statistics.recordFocusCompletion(minutes: settings.focusMinutes)
+        // Procrastination only when focus gating could actually measure it:
+        // with gating off (or no apps listed) the countdown is never held,
+        // and nil keeps the untracked session out of the aggregates instead
+        // of counting as a spotless zero.
+        let trackedProcrastination: Int? =
+          focusGuard.enabled && !focusGuard.focusApps.isEmpty
+          ? Int(procrastinationTime.rounded())
+          : nil
+        statistics.recordFocusCompletion(
+          minutes: settings.focusMinutes,
+          procrastinationSeconds: trackedProcrastination,
+        )
         focusCompletionTick += 1
       }
       completedFocusSessions += 1
     }
+    // The accumulator measured the phase now ending; whatever comes next
+    // starts clean (skips discard it along with the session's credit).
+    procrastinationTime = 0
 
     // Determine the next phase.
     let nextPhase: Phase

@@ -6,6 +6,42 @@ struct FocusSessionRecord: Identifiable, Codable, Hashable {
   let id: UUID
   let date: Date
   let minutes: Int
+
+  /// Seconds the countdown spent held by focus gating during this session
+  /// (no focus app frontmost — see `FocusGuard`). `nil` when gating wasn't
+  /// enabled for the session, which is distinct from 0 ("tracked, and the
+  /// user never strayed"): untracked sessions must stay out of
+  /// procrastination aggregates instead of reading as perfect ones.
+  let procrastinationSeconds: Int?
+
+  init(
+    id: UUID,
+    date: Date,
+    minutes: Int,
+    procrastinationSeconds: Int? = nil,
+  ) {
+    self.id = id
+    self.date = date
+    self.minutes = minutes
+    self.procrastinationSeconds = procrastinationSeconds
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case id, date, minutes, procrastinationSeconds
+  }
+
+  /// Custom decoding so previously-persisted records (saved before
+  /// `procrastinationSeconds` existed) load without error instead of
+  /// failing the whole history decode.
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    id = try container.decode(UUID.self, forKey: .id)
+    date = try container.decode(Date.self, forKey: .date)
+    minutes = try container.decode(Int.self, forKey: .minutes)
+    procrastinationSeconds = try container.decodeIfPresent(
+      Int.self, forKey: .procrastinationSeconds,
+    )
+  }
 }
 
 /// A single day's total focus minutes (date normalized to start-of-day).
@@ -57,13 +93,14 @@ final class StatisticsStore {
 
   // MARK: - Public Actions
 
-  func recordFocusCompletion(minutes: Int) {
+  func recordFocusCompletion(minutes: Int, procrastinationSeconds: Int? = nil) {
     guard minutes > 0 else { return }
     records.append(
       FocusSessionRecord(
         id: UUID(),
         date: Date(),
         minutes: minutes,
+        procrastinationSeconds: procrastinationSeconds,
       ),
     )
     persist()
@@ -146,6 +183,42 @@ final class StatisticsStore {
     Self.timeOfDayHeatmap(records: records)
   }
 
+  /// Minutes the countdown spent held by focus gating over the last 7 days,
+  /// or nil when no session in that window was tracked at all — the
+  /// Procrastination highlight card hides rather than claiming a spotless
+  /// zero the app never measured.
+  var weekProcrastinationMinutes: Int? {
+    let calendar = Calendar.current
+    let start = calendar.startOfDay(
+      for: calendar.date(byAdding: .day, value: -6, to: Date()) ?? Date(),
+    )
+    return Self.procrastinationMinutes(records: records, from: start)
+  }
+
+  /// Compact plain-text rendering of the aggregates above, fed to the
+  /// on-device model as the prompt behind the Statistics window's AI
+  /// overview (`StatisticsSummaryGenerator`). Doubles as the regeneration
+  /// key: the generator only re-runs when this string changes, so opening
+  /// the window twice with unchanged history reuses the cached summary.
+  var summaryDigest: String {
+    var lines = [
+      "Today: \(todayMinutes) minutes of focus across \(todaySessions) sessions.",
+      "Last 7 days: \(weekMinutes) minutes across \(weekSessions) sessions.",
+      "Last 30 days: \(monthMinutes) minutes across \(monthSessions) sessions.",
+      "Current daily streak: \(currentStreak) days.",
+    ]
+    if let bestDay {
+      lines.append("Best day ever: \(bestDay.minutes) minutes.")
+    }
+    if let weekProcrastinationMinutes {
+      lines.append(
+        "Time procrastinated during focus sessions in the last 7 days: "
+          + "\(weekProcrastinationMinutes) minutes.",
+      )
+    }
+    return lines.joined(separator: "\n")
+  }
+
   // MARK: - Helpers
 
   private func sumMinutes(from startDate: Date) -> Int {
@@ -217,6 +290,22 @@ final class StatisticsStore {
       cursor = previous
     }
     return streak
+  }
+
+  /// Sums tracked procrastination across records at or after `startDate`,
+  /// in whole minutes (summed as seconds first, so many short slips don't
+  /// each truncate to zero). Nil when no record in the window carries a
+  /// tracked value — see `weekProcrastinationMinutes` for why that differs
+  /// from 0.
+  nonisolated static func procrastinationMinutes(
+    records: [FocusSessionRecord],
+    from startDate: Date,
+  ) -> Int? {
+    let tracked = records
+      .filter { $0.date >= startDate }
+      .compactMap(\.procrastinationSeconds)
+    guard !tracked.isEmpty else { return nil }
+    return tracked.reduce(0, +) / 60
   }
 
   nonisolated static func bestDay(

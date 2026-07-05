@@ -124,4 +124,87 @@ struct StatisticsAggregatesTests {
     #expect(cells.first?.weekday == 2) // Monday
     #expect(cells.last?.weekday == 1) // Sunday, wrapping back around
   }
+
+  // MARK: - Procrastination
+
+  private func trackedRecord(
+    daysAgo: Int,
+    procrastinationSeconds: Int?,
+  ) -> FocusSessionRecord {
+    FocusSessionRecord(
+      id: UUID(),
+      date: day(-daysAgo),
+      minutes: 25,
+      procrastinationSeconds: procrastinationSeconds,
+    )
+  }
+
+  @Test("untracked sessions produce no procrastination total at all")
+  func untrackedIsNilNotZero() {
+    let records = [trackedRecord(daysAgo: 0, procrastinationSeconds: nil)]
+    let total = StatisticsStore.procrastinationMinutes(records: records, from: day(-6))
+    #expect(total == nil)
+  }
+
+  @Test("tracked seconds sum before converting to minutes, so short slips still count")
+  func sumsSecondsBeforeTruncating() {
+    // 50s + 40s = 90s = 1 minute; per-record truncation would read 0.
+    let records = [
+      trackedRecord(daysAgo: 0, procrastinationSeconds: 50),
+      trackedRecord(daysAgo: 1, procrastinationSeconds: 40),
+    ]
+    let total = StatisticsStore.procrastinationMinutes(records: records, from: day(-6))
+    #expect(total == 1)
+  }
+
+  @Test("records before the window and untracked records are both left out")
+  func windowAndTrackingFilters() {
+    let records = [
+      trackedRecord(daysAgo: 0, procrastinationSeconds: 120),
+      trackedRecord(daysAgo: 1, procrastinationSeconds: nil),
+      trackedRecord(daysAgo: 30, procrastinationSeconds: 600), // outside window
+    ]
+    let total = StatisticsStore.procrastinationMinutes(records: records, from: day(-6))
+    #expect(total == 2)
+  }
+
+  @Test("a tracked spotless session reads as zero, not as untracked")
+  func trackedZeroIsZero() {
+    let records = [trackedRecord(daysAgo: 0, procrastinationSeconds: 0)]
+    let total = StatisticsStore.procrastinationMinutes(records: records, from: day(-6))
+    #expect(total == 0)
+  }
+}
+
+// MARK: - Record decoding
+
+@Suite("Focus session record decoding")
+struct FocusSessionRecordDecodingTests {
+  @Test("records persisted before procrastination tracking still decode")
+  func legacyRecordDecodes() throws {
+    let legacyJSON = """
+      {"id":"00000000-0000-0000-0000-000000000001","date":776476800,"minutes":25}
+      """
+    let record = try JSONDecoder().decode(
+      FocusSessionRecord.self,
+      from: Data(legacyJSON.utf8),
+    )
+    #expect(record.minutes == 25)
+    #expect(record.procrastinationSeconds == nil)
+  }
+
+  @Test("procrastination seconds survive an encode/decode round trip")
+  func roundTripsProcrastination() throws {
+    let record = FocusSessionRecord(
+      id: UUID(),
+      date: Date(),
+      minutes: 25,
+      procrastinationSeconds: 90,
+    )
+    let decoded = try JSONDecoder().decode(
+      FocusSessionRecord.self,
+      from: JSONEncoder().encode(record),
+    )
+    #expect(decoded == record)
+  }
 }
