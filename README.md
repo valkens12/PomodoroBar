@@ -6,9 +6,9 @@ Built with SwiftUI against the macOS 26 SDK, running on macOS 14 (Sonoma) or lat
 
 <img width="632" height="894" alt="Focus" src="https://github.com/user-attachments/assets/3e6d6875-2880-4eb1-b6ed-a942f967f2bf" />
 
-<img width="1416" height="1152" alt="an on, the time caly come do while are of these ep a fortres  Satch to Yests ed the seman" src="https://github.com/user-attachments/assets/a94214d1-5e77-4143-82f1-72a838a51511" />
+<img width="1416" height="1152" alt="Statistics window" src="https://github.com/user-attachments/assets/a94214d1-5e77-4143-82f1-72a838a51511" />
 
-<img width="1304" height="1424" alt="Pasted Graphic 2" src="https://github.com/user-attachments/assets/e5fe1792-62f7-4923-be0e-8319c94fc74c" />
+<img width="1304" height="1424" alt="Settings" src="https://github.com/user-attachments/assets/e5fe1792-62f7-4923-be0e-8319c94fc74c" />
 
 
 
