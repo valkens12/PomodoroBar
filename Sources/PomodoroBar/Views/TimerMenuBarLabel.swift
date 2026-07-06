@@ -62,7 +62,7 @@ struct TimerMenuBarLabel: View {
             if animator.isAlarming {
               alarmGlyph
             }
-            Text(timer.formattedRemaining)
+            Text(timer.formattedRemainingMinutes)
               .font(Typography.menuBarCountdown)
               .monospacedDigit()
           }

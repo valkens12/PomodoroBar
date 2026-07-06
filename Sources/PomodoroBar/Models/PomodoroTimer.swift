@@ -168,6 +168,16 @@ final class PomodoroTimer {
     return String(format: "%02d:%02d", minutes, seconds)
   }
 
+  /// Minutes-only countdown for the menu bar, which drops seconds to keep the
+  /// status item compact. Truncates rather than rounds up, so it agrees with
+  /// the minutes component of `formattedRemaining` (e.g. both read "5" at
+  /// 5:03 remaining).
+  var formattedRemainingMinutes: String {
+    let total = max(remainingSeconds, 0)
+    let minutes = total / 60
+    return String(format: "%dm", minutes)
+  }
+
   var isRunning: Bool {
     runState == .running
   }
