@@ -36,6 +36,7 @@ final class AppSettings {
     static let monochromeMenuBarIcon = "monochromeMenuBarIcon"
     static let aiSummaryEnabled = "aiSummaryEnabled"
     static let aiSummaryDarkHumor = "aiSummaryDarkHumor"
+    static let shareCardStyle = "shareCardStyle"
   }
 
   // MARK: - Stored Properties
@@ -162,6 +163,14 @@ final class AppSettings {
     }
   }
 
+  /// Visual style of the shareable Focus Card, persisted so the share sheet
+  /// reopens on the user's last pick.
+  var shareCardStyle: FocusShareCardStyle {
+    didSet {
+      UserDefaults.standard.set(shareCardStyle.rawValue, forKey: Key.shareCardStyle)
+    }
+  }
+
   // MARK: - Init
 
   init() {
@@ -245,6 +254,11 @@ final class AppSettings {
     } else {
       self.globalHotkey = .defaultCombo
     }
+    // A raw value that no longer matches a case (removed style, corrupted
+    // plist) degrades to the default instead of trapping.
+    self.shareCardStyle = FocusShareCardStyle(
+      rawValue: defaults.string(forKey: Key.shareCardStyle) ?? "",
+    ) ?? .ember
 
     // Mirror back to defaults so persisted values are always consistent with
     // the (possibly clamped) in-memory defaults set above.
@@ -263,6 +277,7 @@ final class AppSettings {
     defaults.set(globalHotkeyEnabled, forKey: Key.globalHotkeyEnabled)
     defaults.set(Int(globalHotkey.keyCode), forKey: Key.globalHotkeyKeyCode)
     defaults.set(Int(globalHotkey.carbonModifiers), forKey: Key.globalHotkeyModifiers)
+    defaults.set(shareCardStyle.rawValue, forKey: Key.shareCardStyle)
   }
 
   // MARK: - Phase Duration

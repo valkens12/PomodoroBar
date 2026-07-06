@@ -21,6 +21,9 @@ struct StatisticsView: View {
   /// Gates the destructive Clear History action behind a confirmation.
   @State private var showClearConfirmation = false
 
+  /// Presents the Focus Card share sheet (style picker + ShareLink).
+  @State private var showShareCard = false
+
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 20) {
@@ -52,6 +55,38 @@ struct StatisticsView: View {
       .padding(20)
       .frame(maxWidth: .infinity, alignment: .leading)
     }
+    .toolbar {
+      if !statistics.records.isEmpty {
+        shareButton
+      }
+    }
+    .sheet(isPresented: $showShareCard) {
+      FocusShareCardPickerView(
+        data: FocusShareCardData.make(records: statistics.records),
+      )
+    }
+  }
+
+  // MARK: - Share
+
+  /// Opens the Focus Card picker (`FocusShareCardPickerView`): a portrait
+  /// story-format PNG derived from the history, not a screenshot of this
+  /// window, in a choice of visual styles.
+  private var shareButton: some View {
+    Button {
+      showShareCard = true
+    } label: {
+      Label(
+        String(localized: "share.button", defaultValue: "Share Focus Card"),
+        systemImage: "square.and.arrow.up",
+      )
+    }
+    .help(
+      String(
+        localized: "share.button.help",
+        defaultValue: "Share your focus rhythm as an image.",
+      )
+    )
   }
 
   // MARK: - Empty State

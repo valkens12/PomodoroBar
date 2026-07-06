@@ -39,6 +39,7 @@ xattr -cr /Applications/PomodoroBar.app
 - **Focus Mode**: the timer only counts down while one of your chosen apps is frontmost. Switch to anything off-list and it pauses itself; switch back and it resumes.
 - **Safari website restriction**: limit the Safari focus-app entry to specific domains, so only chosen tabs count as work (others hold the timer with a "wrong tab" banner).
 - **Statistics**: daily / weekly / monthly focus time and session counts, plus a 7-day bar chart and 30-day trend (Swift Charts).
+- **Shareable Focus Card**: a portrait story-format image generated from your history rather than a window screenshot. It names your focus persona (Early Bird, Night Owl, ...), draws your hours as a radial 24-hour bloom, and adds streak, best day, and week-over-week change. Three visual styles (Ember, Harvest, Midnight) are cycled in a preview sheet before sharing.
 - **Global hotkey**: optional system-wide start/pause shortcut (default ⌃⌥P, recordable).
 - **Launch at login**, sound cues, actionable end-of-phase notifications, and a sleep-aware wall-clock timer that resumes on wake.
 - **Per-phase tomato glyph** in the progress ring: sun-ripened red/orange for focus, fresh leaf green for short breaks, deep vine green-teal for long breaks.

@@ -309,3 +309,39 @@
 /* MARK: - Menu bar alarm (Views/TimerMenuBarLabel.swift) */
 
 "menubar.alarm" = "Pomodoro fertig. Zum Bestätigen klicken.";
+
+/* MARK: - Focus share card (Views/FocusShareCardView.swift, Views/FocusShareCardPickerView.swift) */
+
+"share.button"          = "Fokus-Karte teilen";
+"share.button.help"     = "Teile deinen Fokus-Rhythmus als Bild.";
+"share.preview.title"   = "Meine Fokus-Karte";
+
+"share.sheet.title"       = "Fokus-Karte teilen";
+"share.sheet.share"       = "Teilen";
+"share.sheet.previous"    = "Vorheriger Stil";
+"share.sheet.next"        = "Nächster Stil";
+"share.sheet.previewA11y" = "Vorschau der Fokus-Karte, Stil %@";
+
+"share.style.ember"    = "Glut";
+"share.style.harvest"  = "Ernte";
+"share.style.midnight" = "Mitternacht";
+
+"share.card.kicker"     = "Mein Fokus-Rhythmus";
+"share.card.week"       = "Diese Woche";
+"share.card.allTime"    = "aller Zeiten";
+"share.card.weekDelta"  = "%@ %% ggü. letzter Woche";
+"share.card.totalFocus" = "%@ Fokus insgesamt";
+"share.card.madeWith"   = "mit PomodoroBar erstellt";
+
+"share.persona.earlyBird"               = "Frühaufsteher";
+"share.persona.earlyBird.tagline"       = "Am schärfsten, bevor die Welt erwacht";
+"share.persona.morningMaker"            = "Morgenmacher";
+"share.persona.morningMaker.tagline"    = "Tiefe Arbeit, solange der Kaffee noch warm ist";
+"share.persona.afternoonAnchor"         = "Nachmittagsanker";
+"share.persona.afternoonAnchor.tagline" = "Voll da, wenn der Tag seinen Höhepunkt erreicht";
+"share.persona.eveningCloser"           = "Abend-Finisher";
+"share.persona.eveningCloser.tagline"   = "Bringt den Tag nach Feierabend stark zu Ende";
+"share.persona.nightOwl"                = "Nachteule";
+"share.persona.nightOwl.tagline"        = "Tiefer Fokus nach Einbruch der Dunkelheit";
+"share.persona.sprouting"               = "Grüne Tomate";
+"share.persona.sprouting.tagline"       = "Reift noch, Sitzung für Sitzung";
