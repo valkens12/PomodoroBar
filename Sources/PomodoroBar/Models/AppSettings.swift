@@ -207,7 +207,7 @@ final class AppSettings {
     if defaults.object(forKey: Key.hideMenuBarTime) != nil {
       self.hideMenuBarTime = defaults.bool(forKey: Key.hideMenuBarTime)
     } else {
-      self.hideMenuBarTime = false
+      self.hideMenuBarTime = true
     }
     if defaults.object(forKey: Key.notificationsEnabled) != nil {
       self.notificationsEnabled = defaults.bool(forKey: Key.notificationsEnabled)
@@ -222,7 +222,7 @@ final class AppSettings {
     if defaults.object(forKey: Key.aiSummaryEnabled) != nil {
       self.aiSummaryEnabled = defaults.bool(forKey: Key.aiSummaryEnabled)
     } else {
-      self.aiSummaryEnabled = true
+      self.aiSummaryEnabled = false
     }
     if defaults.object(forKey: Key.aiSummaryDarkHumor) != nil {
       self.aiSummaryDarkHumor = defaults.bool(forKey: Key.aiSummaryDarkHumor)
